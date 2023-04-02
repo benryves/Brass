@@ -1,0 +1,14 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN">
+<link rel="Stylesheet" href="../style.css" />
+    <h3>.branchrule</h3>
+    <pre class="code">.branchrule <i>rule</i></pre>
+    <p>Sets the rule used to create branch table labels for TI apps. <tt class="code">{*}</tt> indicates the label itself. Defaults to <tt class="code">_{*}</tt></p>
+    <pre class="code">.branchrule _{*}
+.branch Label ; creates branch label _Label
+
+.branchrule {*}!
+.branch Label ; creates branch label Label!
+
+.branchrule `{*}`
+.branch Label ; creates branch label `Label`</pre>
+    </table>

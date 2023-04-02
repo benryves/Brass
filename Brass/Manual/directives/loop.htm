@@ -1,0 +1,42 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN">
+		<h3 class="brass_specific">.loop</h3>
+        <pre class="code">.loop</pre>
+        <p>This directive terminates the last defined <tt class="code">.for</tt> or <tt class="code">.repeat</tt> loop.</p>
+        <pre class="code">.for i, 0, 7
+.db 1&lt;&lt;i
+.loop
+
+; This assembles as:
+.db %00000001
+.db %00000010
+.db %00000100
+.db %00001000
+.db %00010000
+.db %00100000
+.db %01000000
+.db %10000000</pre>
+	<p>Using Brass's conditionals, you can use it to assemble slightly different blocks of code on each loop. For example, a sprite routine that would need to do the same shifting operations but in one case AND the mask then OR the sprite data:</p><pre class="code">.for i, 1, 2
+    call _shift_sprite
+    
+_sprite_loop_{i}:   ; To ensure different label names each loop
+    ld a,(de)
+    
+    .if i == 1
+        and (hl)
+    .else
+        or (hl)
+    .endif
+    
+    ld (hl),a
+    inc hl
+    inc de
+    call _update_pointers
+    djnz _sprite_loop_{i}
+    
+.loop</pre>
+    <p>Naturally, for-loops can be nested.</p>
+    <pre class="code">.for y,0,7
+    .for x,0,7
+        .db x+y*2
+    .loop
+.loop</pre><link rel="Stylesheet" href="../style.css" />

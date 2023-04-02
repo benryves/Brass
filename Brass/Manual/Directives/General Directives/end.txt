@@ -1,3 +1,0 @@
-.end
-.end
-Stops the current source file from assembling (the behaviour is slightly different to TASM in that it only stops the current file from assembling - think of it like PHP's return; after you have loaded a file using require();).

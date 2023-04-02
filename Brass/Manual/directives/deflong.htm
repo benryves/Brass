@@ -1,0 +1,23 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN">
+   <h3>.deflong</h3>
+    <pre class="code">.deflong <i>name[(argument [, argument [, ...]])] replacement</i></pre>
+    <p>Defining lengthy macros can be a painful job, and so you can use this directive to define a macro with multiple lines without having to use <tt>.defcont</tt>.</p>
+    <pre class="code">; 8-bit multiplication
+; Used as a macro for inlining (speed)
+
+.deflong multiply_8()
+    sla h
+    jr nc,{+}
+    ld l,e
++
+    .repeat 7
+        add hl,hl
+        jr nc,{+}
+        add hl,de
+    +
+    .loop
+    ret
+.enddeflong
+
+multiply_8()</pre>
+    <p>All the usual macro definition rules apply.</p><link rel="Stylesheet" href="../style.css" />

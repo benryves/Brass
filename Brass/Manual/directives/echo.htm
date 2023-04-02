@@ -1,0 +1,20 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN">
+        <h3>.echo and .echoln</h3>
+        <pre class="code">.echo <i>expression [, expression, [, expression [ ... ]]]</i></pre>
+        <p>This outputs text or the result of an expression to the output console. For example:</p>
+        <pre class="code">_routine:
+    ld (hl), a
+    inc hl
+    ret
+_end_of_routine:
+
+.echo "The routine _routine is "
+.echo _end_of_routine - _routine
+.echo " bytes in size.\n"</pre>
+    <p>Unlike TASM, you can specify multiple arguments by splitting up expressions with commas - for example:</p>
+    <pre class="code">.echo "The routine _routine is ", _end_of_routine - _routine, " bytes in size.\n"</pre>
+    <p>The <tt class="code">.echoln</tt> directive echoes a newline character at the end of the list of items. For example, both of these do the same thing:</p>
+    <pre class="code">.echoln "x=", x
+.echo "x=", x, "\n"</pre>
+    
+    <link rel="Stylesheet" href="../style.css" />

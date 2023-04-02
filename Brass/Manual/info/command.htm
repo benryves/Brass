@@ -1,0 +1,28 @@
+<link rel="Stylesheet" href="../style.css" />
+<h3>Command-Line Invocation</h3>
+     <pre class="code">C:\&gt;Brass <i>source.ext [binary.ext [export.ext]] [-switch [-switch [-...]]]</i></pre>
+        <p>Brass only needs one command-line argument - the filename of the source file you are assembling. You can optionally pass a filename for the binary to be output - it defaults to the filename of the source file with <tt>.bin</tt> on the end.</p>
+        <p>You can also specify a file name for the label export table (generate with the <tt class="code">.export</tt> directive).This defaults to the source filename with <tt>_labels.inc</tt> tacked on the end.</p>
+        <p>Switches can be passed as a <tt class="code">-</tt> dash followed by a single character. The available switches are:</p>
+        <table>
+            <tr><th>Switch</th><th>Description</th></tr>
+            <tr><td><tt>d</tt></td><td>Debug mode - write a debug log file for Latenite.</td></tr>
+            <tr><td><tt>e</tt></td><td>Strict error mode.</td></tr>
+            <tr><td><tt>l</tt></td><td>Write list file (followed by filename).</td></tr>
+            <tr><td><tt>o</tt></td><td>Do not write headers on XML error log.</td></tr>
+            <tr><td><tt>s</tt></td><td>Force case sensitivity on macros and labels.</td></tr>
+            <tr><td><tt>t</tt></td><td>Use external table file (followed by filename).</td></tr>
+            <tr><td><tt>x</tt></td><td>Export XML error log.</td></tr>
+        </table>
+        <p>As far as the error log is concerned, it will write to the file name referenced in the environment variable. Latenite sets this for you, or you can manually set it with the command (on the Windows command-line):</p>
+        <pre class="code">SET ERROR_LOG=<i>filename</i></pre>
+        <p>Strict error mode stops after a single error. The default is to leave this off, so the assembler will skip over errors -this produces a useless binary, but it's easier to debug when you have a large list of errors to fix rather fixing than one at a time, recompiling, repeating.</p>
+        <p>Some examples:</p>
+        <table>
+            <tr><th>Example</th><th>Description</th></tr>
+            <tr><td><tt>Brass file.asm</tt></td><td>Assembles <tt>file.asm</tt> as <tt>file.bin</tt></td></tr>
+            <tr><td><tt>Brass file.asm "out file.com"</tt></td><td>Assembles <tt>file.asm</tt> as <tt>out file.com</tt></td></tr>
+            <tr><td><tt>Brass file.asm -s hello.exe</tt></td><td>Assembles <tt>file.asm</tt> as <tt>hello.exe</tt> (case sensitive).</td></tr>
+            <tr><td><tt>Brass file.asm -l hello.lst</tt></td><td>Assembles <tt>file.asm</tt> as <tt>file.bin</tt> and writes listing to <tt>hello.lst</tt>.</td></tr>
+            <tr><td><tt>Brass -t tasm80.tab file.asm</tt></td><td>Assembles <tt>file.asm</tt> as <tt>file.bin</tt> using <tt>tasm80.tab</tt>.</td></tr>
+        </table>

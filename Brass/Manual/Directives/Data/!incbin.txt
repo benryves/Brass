@@ -1,4 +1,0 @@
-.incbin/#incbin
-.incbin filename
-Inserts a binary file straight into the output - no assembling is done. This can be useful to hold data (such as sprites or large amounts of text) in an external file in a raw format, rather than having to expand to multiple .db statements.
-A more novel use of .incbin would be to use it to load a preassembled chunk of code into your program. By using the .export directive you could also get it to export the correct label addresses as you assemble the original block.

@@ -1,7 +1,0 @@
-.dbrnd/.dwrnd
-.dbrnd count, min, max
-Outputs 'count' random bytes or words between 'min' and 'max'. For example, you could generate a random 4-character string of letters for one of those annoying website "I am not a machine, honest!" verification things:
-====
-.dbrnd 4, 'A', 'Z'
-====
-Use .dwrnd if you want to output words.

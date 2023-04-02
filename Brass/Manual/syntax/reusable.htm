@@ -1,0 +1,40 @@
+<link rel="Stylesheet" href="../style.css" />
+   <h3>Reusable Labels</h3>
+<p>It is pretty likely that you will often need a loop label, and even with modules calling them <tt class="code">_loop</tt> each time gets a bit painful.</p>
+        <p>A reusable label is made up of a sequence of <tt class="code">+</tt> plus or <tt class="code">-</tt> minus symbols. To avoid ambiguity with the addition and subtraction operators, you must surround them in <tt>{</tt>curly braces<tt>}</tt>. When you use the label in an expression, the label that is matched is the closest one behind you (in the case of <tt class="code">-</tt>) or the closest one in front of you (in the case of <tt class="code">+</tt>). I guess this really needs an example:</p>
+        <pre class="code">    ld b, 10
+
+-: ; This is label (A)
+
+    ld a, b
+    call {+}    ; Calls label (B)
+    djnz {-}    ; Loops back to label (A)
+
++: ; This is label (B)
+
+    jr {+}      ; Jumps to label (C)
+
++: ; This is label (C)
+
+    jp {-}      ; Jumps to label (A)</pre>
+    <p>Pretty cool. If you need a little more flexibility, such as nesting loops, you can lengthen the names of the labels:</p>
+        <pre class="code">    ld b, 20
+--:                 ; (A)
+    push bc
+    ld b, 30
+-:                  ; (B)
+    ; Do stuff
+    djnz {-}        ; Loops to (B)
+
+    pop bc
+    djnz {--}       ; Loops to (A)</pre><p>Another type of reusable label, <tt class="code">@</tt>, exists. Rather than <tt class="code">+</tt> and <tt class="code">-</tt>, you need to specify the offset to it. For example:</p>
+        <pre class="code">@   ; (A)
+@   ; (B)
+
+    jp {@}      ; Jump one ahead, to C.
+    jp {2@}     ; Jump two ahead, to D.
+    jp {-1@}    ; Jump one backwards, to B.
+    jp {-2@}    ; Jump two backwards, to A.
+
+@   ; (C)
+@   ; (D)</pre>

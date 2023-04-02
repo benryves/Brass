@@ -1,0 +1,33 @@
+<link rel="Stylesheet" href="../style.css" />
+   <h3>Numeric Constants</h3>
+    <p>Numbers can be expressed in different 4 bases in Brass:</p>
+    <table>
+        <tr><th>Base</th><th>Prefix</th><th>Postfix</th><th>Example</th></tr>
+        <tr><td>Hexadecimal (16)</td><td><tt>$</tt></td><td><tt>h</tt></td><td><tt>$FA</tt> or <tt>9D94h</tt></td></tr>
+        <tr><td>Decimal (10)</td><td></td><td><tt>d</tt></td><td><tt>230</tt> or <tt>45d</tt></td></tr>
+
+        <tr><td>Octal (8)</td><td><tt>@</tt></td><td><tt>o</tt></td><td><tt>@023</tt> or <tt>777o</tt></td></tr>
+        <tr><td>Binary (2)</td><td><tt>%</tt></td><td><tt>b</tt></td><td><tt>%01010101</tt> or <tt>1111b</tt></td></tr>
+    </table>
+    <p>Labels can hold floating-point values. You must use decimal for this, and the decimal point '<tt class="code">.</tt>' regardless of OS localisation.</p>
+
+    <a name="string"></a>
+    <h3>Character or String Constants</h3>
+    <p>There are two types of constant;</p>
+    <ul>
+        <li><b>Character constants</b> - A single character is surrounded in 'single quotes' - for example, <tt class="code">.db '!'</tt>. The advantage of this is that characters can be used as expressions (<tt class="code">ld a,'?'-3</tt>). If you need to specify the <tt>'</tt> character itself, you must escape it with a backslash: <tt class="code">'\''</tt></li>
+        <li><b>String constants</b> - These are simply plain text surrounded with "double quotes" where each character is converted into the ASCII equivalent - for example <tt class="code">.db "Brass has simple string support."</tt> Again, to use the " inside a string, you must escape it - <tt class="code">"Like \"this\"."</tt></li>
+    </ul>
+    <p>There are a number of escape sequences you can use:</p>
+    <table>
+        <tr><th>Sequence</th><th>Meaning</th></tr>
+        <tr><td><tt>\n</tt></td><td>Newline</td></tr>
+        <tr><td><tt>\r</tt></td><td>Carriage return</td></tr>
+        <tr><td><tt>\b</tt></td><td>Backspace</td></tr>
+        <tr><td><tt>\t</tt></td><td>Tab</td></tr>
+        <tr><td><tt>\f</tt></td><td>Formfeed</td></tr>
+        <tr><td><tt>\\</tt></td><td>Backslash</td></tr>
+        <tr><td><tt>\'</tt></td><td>Single quote</td></tr>
+        <tr><td><tt>\"</tt></td><td>Double quote</td></tr>
+    </table>
+    <p>Note that when using character constants you should not escape the double quote symbol and when using string quotes you should not escape the single quote symbol.</p>

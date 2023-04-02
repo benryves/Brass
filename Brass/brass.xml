@@ -8,6 +8,37 @@
         description="Forces the instruction pointer to a new location. Defaults to zero. The output binary is made up of all the bytes from the lowest address ever written to to the highest address ever written to, so watch out that you don't do anything before issuing the .org directive."
     />
     <item
+        name="align"
+        highlight=".align"
+        colour="directive"
+        syntax=".align &lt;i&gt;align&lt;/i&gt;"
+        description="Align the following code to a particular boundary. This can be rather useful for speed. Compare the following examples - the second one is made faster by removing the addition and assignment to &lt;tt&gt;de&lt;/tt&gt; (and also stops &lt;tt&gt;de&lt;/tt&gt; from being destroyed)."
+    >
+	<example code="    ld l,(ix+0) ; Get the offset
+    ld h,0
+    ld de,_data
+    add hl,de
+    ld a,(hl)
+    call _do_something
+    
+    ; snip
+    
+_data
+    .incbin &amp;quot;datafile.bin&amp;quot;" />
+
+	<example code="    ld l,(ix+0) ; Get the offset
+    ld h,_data &amp;lt;&amp;lt; 8
+    ld a,(hl)
+    call _do_something
+    
+    ; snip
+
+.align 256    
+_data
+    .incbin &amp;quot;datafile.bin&amp;quot;" />
+	<note description="Because the alignment moves the code to the &lt;i&gt;next&lt;/i&gt; boundary, there is a degree of wasted space." />
+    </item>
+    <item
         name="include"
         highlight=".include/#include"
         colour="directive"
@@ -34,6 +65,33 @@ _end_of_routine:
 .echo _end_of_routine - _routine
 .echo &amp;quot; bytes in size.\n&amp;quot;" />
     </item>
+    
+    
+    <item
+        name="fail"
+        highlight=".fail"
+        colour="directive"
+        syntax=".fail &lt;i&gt;[expression]&lt;/i&gt;"
+        description="Forces an error in the source code. It follows the same general rules as &lt;a href=lnh_echo&gt;.echo&lt;/a&gt;."
+    >
+    <example code=".if # != 3
+.fail &amp;quot;This module will only run from page 3, not &amp;quot;, #, &amp;quot;!&amp;quot;
+.endif" />
+    </item>
+    
+    <item
+        name="warn"
+        highlight=".warn"
+        colour="directive"
+        syntax=".warn &lt;i&gt;[expression]&lt;/i&gt;"
+        description="Displays a warning. It follows the same general rules as &lt;a href=lnh_echo&gt;.echo&lt;/a&gt;."
+    >
+    <example code=".if $-start &amp;gt; 8*1024 &amp;amp;&amp;amp; platform == ti8x
+.warn &amp;quot;Beware the 8KB limit!&amp;quot;
+.endif" />
+    </item>
+    
+    
     <item
         name="end"
         highlight=".end"
@@ -48,6 +106,32 @@ _end_of_routine:
         syntax=".addinstr &lt;i&gt;instruction args opcode size rule class [shift [or]]&lt;/i&gt;"
         description="Solely included for backwards compatibility with TASM, this allows you to manually add an instruction to the Z80 instruction set. The rest of the line should follow the format as demonstrated in the TASM table files. (See TASMTABS.HTM from TASM's zip file for more information)."
     />
+
+    <item
+        name="endasm"
+        highlight=".endasm"
+        colour="directive"
+        syntax=".endasm"
+        description="Disables assembling after this line. Useful for defining multiple-line comments."
+    />
+
+    <item
+        name="asm"
+        highlight=".asm"
+        colour="directive"
+        syntax=".asm"
+        description="Enables assembling after this line; only required after using &lt;a href=lnh_endasm&gt;.endasm&lt;/a&gt;"
+
+    />
+    
+    <item
+        name="breakpoint"
+        highlight=".breakpoint"
+        colour="directive"
+        syntax=".breakpoint"
+        description="Adds a breakpoint to the current line. This does not directly have any effect on the output binary, but can affect some of the output debugging information (for example, breakpoints can be added to Emukon's debugger via patch files)."
+
+    />
     </group>
     <group name="Labels">
         <item
@@ -58,11 +142,70 @@ _end_of_routine:
             description="This redefines the current character used to denote a local label (defaults to _). You can make it any single character you like, but is strongly recommended you leave it as a standard, non-alphanumeric, non-operator symbol." />
 
         <item
-            name="module"
-            highlight=".module"
+            name="module/endmodule"
+            highlight=".module/.endmodule"
             colour="directive"
             syntax=".module &lt;i&gt;name&lt;/i&gt;"
-            description="Tells the assembler which module you are currently in (to limit the scope of local labels). Defaults to noname, passing a blank name to .module will also reset it to noname." />
+            description="Declares or ends a module. In normal (non-nested) module mode, .endmodule will always revert to the module noname." />
+
+        <item
+            name="nestmodules/endnestmodules"
+            highlight=".nestmodules/.endnestmodules"
+            colour="directive"
+            syntax=".nestmodules"
+            description="Starts or ends the ability to nest modules inside eachother.">
+            <example code=".nestmodules
+.local
+.module Animals
+
+    .module Cat
+        Legs = 4
+    .endmodule
+
+    .echo &amp;quot;Humans have &amp;quot;, Human.Legs, &amp;quot; legs.\n&amp;quot;
+
+    .module Human
+        Legs = 2
+        .module Brother
+            Age = 17
+            .echo &amp;quot;My sister is &amp;quot;, Animals.Human.Sister.Age, &amp;quot; years old.\n&amp;quot;
+        .endmodule
+        .module Sister
+            Age = 21
+            .global
+                Arms = 2
+            .endglobal
+        .endmodule
+    .endmodule
+
+    .module Spider
+        Legs = 8
+        .echo &amp;quot;A spider has &amp;quot;, Legs, &amp;quot; legs.\n&amp;quot;
+    .endmodule
+
+.endmodule
+
+.echo &amp;quot;Cats have &amp;quot;, Animals.Cat.Legs, &amp;quot; legs.\n&amp;quot;
+.echo &amp;quot;My brother is &amp;quot;, Animals.Human.Brother.Age, &amp;quot; years old.\n&amp;quot;
+.echo &amp;quot;My sister has &amp;quot;, Arms, &amp;quot; arms (global!)\n&amp;quot;" />
+        </item>
+
+        <item
+            name="local/endlocal"
+            highlight=".local/.endlocal"
+            colour="directive"
+            syntax=".local"
+            description="Starts or ends the forcing of labels inside modules to be treated as local, even if they do not start with the current local label character." />
+
+
+        <item
+            name="global/endglobal"
+            highlight=".global/.endglobal"
+            colour="directive"
+            syntax=".local"
+            description="Starts or ends the forcing of labels to global scope. Takes priority over any other label scoping." />
+
+
 
         <item
             name="using"
@@ -95,17 +238,11 @@ _label = 2
     ld a,_label ; a = 2 (Test 3 takes priority)
 .endmodule" />
         </item>
+  
 
         <item
-            name="endmodule"
-            highlight=".endmodule"
-            colour="directive"
-            syntax=".endmodule"
-            description="Clears the current module and reverts to the default (&lt;tt&gt;noname&lt;/tt&gt;). The same as &lt;tt&gt;.module&lt;/tt&gt; with no arguments, but does not display an error." />            
-
-        <item
-            name="relocate"
-            highlight=".relocate"
+            name="relocate/endrelocate"
+            highlight=".relocate/.endrelocate"
             colour="directive"
             syntax=".relocate &lt;i&gt;address&lt;/i&gt;"
             description="Defines a block of code as relocatable. Whilst the block of code is output at the current address, all labels are calculated with an offset applied, to allow the block of code to be copied elsewhere with the correct label addresses.">
@@ -156,25 +293,26 @@ do_something
     ret" />
 	<note description="Bear in mind that the special symbol $ (current instruction pointer) is also translated." />
 	</item>
-
-   <item
-        name="endrelocate"
-        highlight=".endrelocate"
-        colour="directive"
-        syntax=".endrelocate"
-        description="Marks the end of a relocatable code block."
-    />
             
         <item
             name="equ"
             highlight=".equ"
             colour="directive"
-            syntax="&lt;i&gt;label&lt;/i&gt; .equ &lt;i&gt;value&lt;/i&gt;"
+            syntax="&lt;i&gt;label&lt;/i&gt; .equ &lt;i&gt;value [, page]&lt;/i&gt;"
             description="This assigns a label with a particular value, so you can then use the label in expressions rather than the constant each time.">
-            <example code="size_of_array .equ 30
+            <example code="do_something = $5421, 3
+
+size_of_array .equ 30
 and_factor = %00001111
 
     ; ...
+
+    ; Select page:
+
+    ld a,:do_something
+    out (page_sel_port),a
+
+    ; Do something
 
     ld b, size_of_array
 _loop:
@@ -184,7 +322,7 @@ _loop:
     ld (hl), a
     inc hl
     djnz _loop" />
-            <note description="= (equals sign) is an alias for .equ." />
+            <note description="= (equals sign) is an alias for .equ. It does differ slightly, however - it can be used to redefine a label (x=x+1), whereas .equ (x .equ x+1) can't." />
             
         </item>
         
@@ -193,7 +331,7 @@ _loop:
             highlight=".export"
             colour="directive"
             syntax=".export &lt;i&gt;label [, label [, label [, ...]]]&lt;/i&gt;"
-            description="This tells Brass to add a label name to the label export file.">
+            description="This tells Brass to add a label name to the label export file. If you do not specify any label names, any named labels defined after that point will be exported.">
             <example code=".org $100
 start_of_code:
     .dw $FAFF
@@ -209,26 +347,133 @@ end_of_code:
         </item>
         
         <item
-            name="var"
-            highlight=".var"
+            name="endexport"
+            highlight=".endexport"
+            colour="directive"
+            syntax=".endexport"
+            description="This stops Brass from outputting any further labels after an &lt;a href=lnh_export&gt;export&lt;/a&gt; directive.">
+            <example code=".export
+
+.varloc $1000
+.var 1, bytesize
+.var 2, wordlength
+.var 4, bigone
+
+counting = $1234
+
+.endexport
+
+; This would produce the file:
+; ----------------------------
+; bytesize      .equ     $1000
+; wordlength    .equ     $1001
+; bigone        .equ     $1003
+; counting      .equ     $1234
+;------------------------------" />
+        </item>
+        
+	 <item
+            name="exportmode"
+            highlight=".exportmode"
+            colour="directive"
+            syntax=".exportmode &lt;i&gt;mode&lt;/i&gt;"
+            description="Specifies the type of label export file to write. A label export file contains all the labels marked for exporting (through the &lt;tt class=&amp;&quot;code&amp;&quot;&gt;.export&lt;/tt&gt; directive) and their value. This can be used, for example, to export the addresses of functions in a library. The label file can even be used alongside a debugger. Here is a list of the modes:&lt;/p&gt;
+        &lt;table&gt;
+            &lt;tr&gt;&lt;th&gt;Mode&lt;/th&gt;&lt;th&gt;Description&lt;/th&gt;&lt;th&gt;Extension&lt;/th&gt;&lt;/tr&gt;
+            &lt;tr&gt;&lt;td&gt;&lt;tt&gt;Assembly&lt;/tt&gt;&lt;/td&gt;&lt;td&gt;Assembly source (&lt;tt class=&amp;&quot;code&amp;&quot;&gt;label .equ value&lt;/tt&gt; pairs).&lt;/td&gt;&lt;td&gt;&lt;tt&gt;.inc&lt;/tt&gt;&lt;/td&gt;&lt;/tr&gt;
+            &lt;tr&gt;&lt;td&gt;&lt;tt&gt;FullAssembly&lt;/tt&gt;&lt;/td&gt;&lt;td&gt;Assembly source (&lt;tt class=&amp;&quot;code&amp;&quot;&gt;label .equ value, page&lt;/tt&gt; pairs).&lt;/td&gt;&lt;td&gt;&lt;tt&gt;.inc&lt;/tt&gt;&lt;/td&gt;&lt;/tr&gt;
+            &lt;tr&gt;&lt;td&gt;&lt;tt&gt;LabelFile&lt;/tt&gt;&lt;/td&gt;&lt;td&gt;Binary label file (&lt;tt class=&amp;&quot;code&amp;&quot;&gt;.inclabels&lt;/tt&gt;).&lt;/td&gt;&lt;td&gt;&lt;tt&gt;.lbl&lt;/tt&gt;&lt;/td&gt;&lt;/tr&gt;
+            &lt;tr&gt;&lt;td&gt;&lt;tt&gt;NO$GMB&lt;/tt&gt;&lt;/td&gt;&lt;td&gt;NO$GMB symbol file.&lt;/td&gt;&lt;td&gt;&lt;tt&gt;.sym&lt;/tt&gt;&lt;/td&gt;&lt;/tr&gt;
+            &lt;tr&gt;&lt;td&gt;&lt;tt&gt;EmukonPatch&lt;/tt&gt;&lt;/td&gt;&lt;td&gt;Emukon patch file.&lt;/td&gt;&lt;td&gt;&lt;tt&gt;.pat&lt;/tt&gt;&lt;/td&gt;&lt;/tr&gt;
+        &lt;/table&gt;   
+        &lt;p&gt;The extension is only used if you do not specify an export file name, and is appended to the binary name (not replacing it - so &lt;tt&gt;binfile.bin&lt;/tt&gt; will have &lt;tt&gt;binfile.bin.inc&lt;/tt&gt;, not &lt;tt&gt;binfile.inc&lt;/tt&gt;)."
+	/>
+
+        <item
+            name="var/tvar/tempvar"
+            highlight=".var/.tvar/.tempvar"
             colour="directive"
             syntax=".var &lt;i&gt;size, name&lt;/i&gt;"
-            description="This is another way to declare a label, designed to make adding variables which point to some location of safe RAM easier. The size argument is in bytes - 1 declares a byte, 2 a word, 324 a 324 byte region. The name is just any old label name (local label rules still apply!) This directive makes very little sense alone, you need &lt;a href=lnh_varloc&gt;.varloc&lt;/a&gt; for it to be of any use." />
+            description="This is another way to declare a label, designed to make adding variables which point to some location of safe RAM easier. The size argument is in bytes - 1 declares a byte, 2 a word, 324 a 324 byte region. The name is just any old label name (local label rules still apply!) You can use the symbols db, byte and dw, word for the size argument if you so wish. You can also declare instances of structures (see the .struct notes for more information).">
+            <note description="Variables defined using .tempvar or .tvar are designed for temporary variables. Temporary variables defined in one module can potentially overwrite temporary variables defined in another module (as long as the modules do not overlap - for example, if one module is a child of the other). See &lt;a href=lnh_varloc&gt;.varloc&lt;/a&gt; for examples." />
+        </item>
             
         <item
             name="varloc"
             highlight=".varloc"
             colour="directive"
             syntax=".varloc &lt;i&gt;location [, size]&lt;/i&gt;"
-            description="This directive is to used with the directive &lt;a href=lnh_var&gt;.var&lt;/a&gt; to create a bunch of labels which point to variables in areas of memory without you having to manually calculate the offsets in memory yourself.">
-            <example code=".define safe_ram $CED5
-.varloc safe_ram, 128 ; We have 128 bytes of safe RAM here
-.var 1, me_x    ; $CED5
-.var 1, me_y    ; $CED6
-.var 2, me_dx   ; $CED7
-.var 2, me_dy   ; $CED9
-.var 1, me_s    ; $CEDB" />
-            <note description="The only reason to declare a size is as an extra precaution; if you overfill your current area of RAM, Brass will warn you for each new variable that it's going into uncharted territory. Specifying a size of 0 (or no size at all) will stop Brass from displaying the warnings." />
+            description="This directive is to used with the directive &lt;a href=lnh_var&gt;.var&lt;/a&gt; to create a bunch of labels which point to variables in areas of memory without you having to manually calculate the offsets in memory yourself. The variables will be slotted into the variable areas defined. Note that the variables will be shuffled around and will not end up in consecutive areas of RAM - if you require that variables are in a fixed order, use &lt;a href=lnh_struct&gt;structures&lt;/a&gt;.
+Each time you use .varloc, you add a new possible area of memory to be used. For example:&lt;pre class=code&gt;.define safe_ram_1 $CED5
+.define safe_ram_2 $F000
+
+.varloc safe_ram_1, 128 ; 128 bytes here
+.varloc safe_ram_2, 256 ; 256 bytes here
+
+.var 2,   word_test ; Could go in either area
+.var 204, big_area  ; Has to go in safe_ram_2
+.var 100, other_big ; Has to go in safe_ram_1, now!&lt;/pre&gt;" />
+
+       <item
+            name="struct/endstruct"
+            highlight=".struct/.endstruct"
+            colour="directive"
+            syntax=".struct &lt;i&gt;name&lt;/i&gt;"
+            description="These directives can be used to define a structure - a consecutive group of variables with a fixed format. Here's an example:&lt;pre class=code&gt;; Define it
+
+.struct Point2D
+    .var db, X
+    .var db, Y
+.endstruct
+
+; Use it
+
+.var Point2D, Me
+
+    ld a,10
+    ld (Me.X),a
+    
+    ld a,32
+    ld (Me.Y),a
+    
+    ld hl,10+32*256
+    ld (Me),hl&lt;/pre&gt;
+    The directive works (in this case) by creating three labels and a new module. One label is Me, pointing to the start of the variable. The module created is added as a child to the current one, with the name Me and has two child labels, X (with a value of Me+0) and Y (with a value of Me+1). You may only use .var and conditional directives inside a structure's definition. You can nest structures - for example:&lt;pre class=code&gt;struct Point3D
+    .var Point2D, P
+    .var db,      Z
+.endstruct
+
+.var Point3D, You
+
+    ld a,(You.P.X)&lt;/pre&gt;
+
+You may not, however, nest a structure onto itself. You might feel tempted, for example, to do the following:
+
+&lt;pre class=code&gt;.struct TreeNode
+    .var word, Value
+    .var TreeNode, RightBranch
+    .var TreeNode, LeftBranch
+.endstruct&lt;/pre&gt;
+
+The problem is that that particular structure has an infinite size! If you wish to implement that sort of data structure, you'd use pointers to the branch nodes.">
+        </item>
+        
+       <item
+            name="enum"
+            highlight=".enum"
+            colour="directive"
+            syntax=".enum &lt;i&gt;name, item1 [= value] [, item2 [= value] [, item3 [= value] [...]]]&lt;/i&gt;"
+            description="Defines an enumeration. These can be used to generate a batch of labels with unique values, or a way of grouping constants.">
+            <example code=".enum Name, Tom, Dick, Harry
+
+Demo1 = Name.Tom   ; 0
+Demo2 = Name.Dick  ; 1
+Demo3 = Name.Harry ; 2
+
+.enum Number, One = 1, Two = 2, Three = 3, FourtyNine = 49
+
+    ld a, Number.FourtyNine" />
+            <note description="Names which do not have a value specifically chosen will have a unique value assigned to them afterwards. It is possible, however, to assign two different names with the same value." />
         </item>
 
        <item
@@ -236,8 +481,19 @@ end_of_code:
             highlight=".varfree"
             colour="directive"
             syntax=".var &lt;i&gt;label&lt;/i&gt;"
-            description="Create a new label containing a pointer to the end of the current variable table." />
+            description="Create a new label containing a pointer to the end of the current variable table.">
+            <note description="Deprecated from version 1.0.3.1 onwards. Do not use." />
+        </item>
  
+
+       <item
+            name="inclabels"
+            highlight=".inclabels"
+            colour="directive"
+            syntax=".inclabels &lt;i&gt;filename&lt;/i&gt;"
+            description="Include a labels file to add fixed labels quickly.">
+            <note description="The file format is just a long list of label definitions, in the form [label name length in characters][label name][page (ushort)][value (ushort)] For example, the label &lt;tt&gt;fish&lt;/tt&gt;, value $1234, would be &lt;tt&gt;.db 4, &amp;quot;fish&amp;quot;, $34, $12, $00, $00&lt;/tt&gt;." />
+       </item>
 
                
     </group>
@@ -376,8 +632,8 @@ Last of all is the rule field. This works like the &lt;a href=lnh_asciimap&gt;.a
         </item>
 
         <item
-            name="dbsin/dbcos/dwsin/dwcos"
-            highlight=".dbsin/.dbcos/.dwsin/.dwcos"
+            name="dbsin/dbcos/dbtan/dwsin/dwcos/dwtan"
+            highlight=".dbsin/.dbcos/.dbtan/.dwsin/.dwcos/.dwtan"
             colour="directive"
             syntax=".dbsin angles_in_circle, amplitude_of_wave, start_angle, end_angle, angle_step, DC_offset"
             description="Use this directive to define trigonometric tables.
@@ -397,7 +653,7 @@ It might be clearer to see some pseudo-code for the way the table is generated:
             sin((angle / angles_in_circle) * 2&amp;pi;)
     )
 next angle&lt;/pre&gt;
-The .dbsin and .dwsin directives generate a sine table, .dbcos and .dwcos generate a cosine table. Needless to say, the .db* versions output bytes, the .dw* versions output words."
+The .dbsin and .dwsin directives generate a sine table, .dbcos and .dwcos generate a cosine table, and .dbtan and .dwtan generate a tangent table. Needless to say, the .db* versions output bytes, the .dw* versions output words."
         >
         </item>
         
@@ -405,9 +661,12 @@ The .dbsin and .dwsin directives generate a sine table, .dbcos and .dwcos genera
             name="incbmp"
             highlight=".incbmp"
             colour="directive"
-            syntax=".incbmp filename [, threshold] [, rle]"
-            description="This directive can be used to load a monochrome bitmap image (BMP, PNG, GIF, JPEG...) and include it directly into your program. The bitmap is padded with 0s to make it a multiple of 8 bits wide, and a 1 corresponds to a black pixel. Any pixel which is darker than the threshold (which defaults to 127) is considered black, any pixel brighter is considered white. Specifying the flag RLE compresses the data after conversion"
+            syntax=".incbmp filename [, threshold] [, rle] [, width = width] [, height = height]"
+            description="This directive can be used to load a monochrome bitmap image (BMP, PNG, GIF, JPEG...) and include it directly into your program. The bitmap is padded with 0s to make it a multiple of 8 bits wide, and a 1 corresponds to a black pixel. Any pixel which is darker than the threshold (which defaults to 127) is considered black, any pixel brighter is considered white. Specifying the flag RLE compresses the data after conversion. Using the width/height flags forces the bitmap data to a particular size; note that the image is not scaled or repositioned in any way (merely aligned top-left and cropped to the final size)."
         >
+	<example code="; Load test.gif -
+; force width to 32 and apply RLE.
+.incbmp test.gif, rle, width = 32" />
         </item>
         
     </group>    
@@ -520,6 +779,40 @@ display_in_base(124)&lt;/pre&gt;
             description="Undefine a previously defined macro."
         />
 
+	<item
+            name="deflong"
+            highlight=".deflong"
+            colour="directive"
+            syntax=".deflong name[(argument [, argument [, ...]])] replacement"
+            description="Defining lengthy macros can be a painful job, and so you can use this directive to define a macro with multiple lines without having to use &lt;a href=lnh_defcont&gt;.defcont&lt;/a&gt;.">
+	<example code="; 8-bit multiplication
+; Used as a macro for inlining (speed)
+
+.deflong multiply_8()
+    sla h
+    jr nc,{+}
+    ld l,e
++
+    .repeat 7
+        add hl,hl
+        jr nc,{+}
+        add hl,de
+    +
+    .loop
+    ret
+.enddeflong
+
+multiply_8()" />
+	</item>
+
+	<item
+            name="enddeflong"
+            highlight=".enddeflong"
+            colour="directive"
+            syntax=".enddeflong"
+            description="Ends the current &lt;a href=lnh_deflong&gt;.deflong&lt;/a&gt; block."
+        />
+
         <item
             name="defcont"
             highlight=".defcont/#defcont"
@@ -585,10 +878,18 @@ display_in_base(124)&lt;/pre&gt;
             syntax=".binaryrange start, end"
             description="Force the output binary to span the declared range, rather than just between the lowest and highest memory addresses written to overall."
         />
+        
+        <item
+            name="unsquish/squish"
+            highlight=".unsquish/.squish"
+            colour="directive"
+            syntax=".unsquish"
+            description="Unsquishes any following bytes when output. An unsquished byte takes up two bytes when output, and is made up of the two ASCII characters that represent it as a hexadecimal value - so, for example, $3F when unsquished will be output as '3', 'F'. Note that even though the output data is twice as big, addressing is still calculated on a single byte basis. Designed for use with the TI-8X series calculators (an unsquished program can be edited, compiled or run as machine code on the calculator). Unsquished programs on the TI-8X still require regular 'squished' data (:AsmPrgm or :End:0000:End token sequences), hence this is a switchable option rather than an output mode."
+        />
 
         <item
-            name="binaryfill"
-            highlight=".binaryfill"
+            name="binaryfill/emptyfill"
+            highlight=".binaryfill/.emptyfill"
             colour="directive"
             syntax=".binaryfill value"
             description="Specifies the value used when a byte is left undefined in the output binary (defaults to $FF)."
@@ -729,13 +1030,26 @@ title:
 A label is created and set to the value of start. The code is assembled between the .for directive and the matching &lt;a href=lnh_loop&gt;.loop&lt;/a&gt;, and the value of the label is adjusted by step at the end of each loop. If it goes beyond the value of end, the label is freed and the assembler carries on."
         >
         </item>
+
+        <item
+            name="repeat/rept"
+            highlight=".repeat/.rept"
+            colour="directive"
+            syntax=".repeat count"
+            description="Assemble a block of code (between here and the matching &lt;a href=lnh_loop&gt;.loop&lt;/a&gt; directive) count times."
+        >
+	<example code=".repeat 3
+    .echo &amp;quot;MELON&amp;quot;
+.loop
+; Displays 'MELONMELONMELON'" />
+        </item>
         
         <item
             name="loop"
             highlight=".loop"
             colour="directive"
             syntax=".loop"
-            description="This directive terminates the last defined .for loop." >
+            description="This directive terminates the last defined .for or .repeat loop." >
             <example code=".for i, 0, 7
 .db 1&amp;lt;&amp;lt;i
 .loop

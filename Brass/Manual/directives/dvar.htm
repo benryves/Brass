@@ -1,0 +1,11 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN">
+        <h3 class="brass_specific">.dvar</h3>
+        <pre class="code">.dvar <i>type, value [, value [, value [ ... ]]]</i></pre>
+        <p>Using this directive, you can output data formatted to a particular data type. The types used are the same as in the <tt class="code">.var</tt> directive.</p>      
+        <p>For example, let's say you needed a floating-point constant in a TI program:</p>
+        <pre class="code">    ld hl,Constant
+    ld de,OP1
+    ld bc,9
+    ldir
+    
+Constant: .dvar tifloat, -76.054824</pre><link rel="Stylesheet" href="../style.css" />

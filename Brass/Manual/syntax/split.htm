@@ -1,0 +1,9 @@
+<link rel="Stylesheet" href="../style.css" />
+<h3>Split Lines</h3>
+        <p>Lines can be split up using the <tt class="code">\</tt> backslash. This can be useful in single-line macro definitions, or to neaten the code up in other ways.</p>
+        <pre class="code">    in a,($DC)
+		
+    bit 2,a \ jr nz,{+} \ inc (ix+0) \ +
+    bit 3,a \ jr nz,{+} \ dec (ix+0) \ +
+    bit 0,a \ jr nz,{+} \ inc (ix+1) \ +
+    bit 1,a \ jr nz,{+} \ dec (ix+1) \ +</pre>

@@ -1,0 +1,26 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN">
+      <h3 class="brass_specific">.var and .tempvar (also .tvar)</h3>
+        <pre class="code">.var <i>size|type, name</i></pre>
+        <p>This is another way to declare a label, designed to make adding variables which point to some location of safe RAM easier. The size argument is in bytes - 1 declares a byte, 2 a word, 324 a 324 byte region. The name is just any old label name (local label rules still apply!)</p>
+
+        <p>Available types are:</p>
+        <table><tr><th>Type</th>                        <th>Description</th>                <th>Size</th>       <th>Castable</th><th>Definable</th></tr>
+            <tr><td><tt class="code">byte</tt></td>     <td>Signed byte</td>                <td>1</td>          <td>&#10004;</td><td>&#10004;</td></tr>
+            <tr><td><tt class="code">ubyte</tt></td>    <td>Unsigned byte</td>              <td>1</td>          <td>&#10004;</td><td>&#10004;</td></tr>
+            <tr><td><tt class="code">asc</tt></td>      <td>ASCII character</td>            <td>1</td>          <td>&#10004;</td><td>&#10004;</td></tr>
+            <tr><td><tt class="code">word</tt></td>     <td>Signed word</td>                <td>2</td>          <td>&#10004;</td><td>&#10004;</td></tr>
+            <tr><td><tt class="code">uword</tt></td>    <td>Unsigned word</td>              <td>2</td>          <td>&#10004;</td><td>&#10004;</td></tr>
+            <tr><td><tt class="code">int</tt></td>      <td>Signed integer</td>             <td>4</td>          <td>&#10004;</td><td>&#10004;</td></tr>
+            <tr><td><tt class="code">uint</tt></td>     <td>Unsigned integer</td>           <td>4</td>          <td>&#10004;</td><td>&#10004;</td></tr>
+            <tr><td><tt class="code">fpX.Y</tt></td>    <td>Signed fixed-point number</td>  <td>Variable</td>   <td>&#10004;</td><td>&#10004;</td></tr>
+            <tr><td><tt class="code">ufpX.Y</tt></td>   <td>Unsigned fixed-point number</td><td>Variable</td>   <td>&#10004;</td><td>&#10004;</td></tr>
+            <tr><td><tt class="code">tifloat</tt></td>  <td>TI floating-point number</td>   <td>9</td>          <td></td>        <td>&#10004;</td></tr>
+            <tr><td>Any structure</td>                  <td>User-defined structure</td>     <td>Variable</td>   <td></td>        <td></td>        </tr>
+        </table>
+        <p>You can also declare instances of structures (see the <tt class="code">.struct</tt> notes for more information).</p>
+        <p>Fixed-point variables are sized depending on which values you specify for X and Y. For example, <tt class="code">fp8.8</tt> is a 16-bit fixed point number, with 8 bits for the integer part and 8 bits for the fractional part. <tt class="code">fp16.8</tt> would have 16 bits in the integer part and 8 in the fractional part, 24-bits (3 bytes) total.</p>
+        <p>Variables defined using <tt class="code">.tempvar</tt> or <tt class="code">.tvar</tt> are designed for temporary variables. Temporary variables defined in one module can potentially overwrite temporary variables defined in another module (as long as the modules do not overlap - for example, if one module is a child of the other).</p>
+        <p>You can declare an array of variables using square brackets and a size - for example:</p>
+        <pre class="code">.var fp8.8[256], TrigTable</pre>
+        <p>This would declare an variable 512 bytes in size (fp8.8 would be 2 bytes per variable).</p>
+        <p>See <tt class="code">.varloc</tt> for examples.</p><link rel="Stylesheet" href="../style.css" />

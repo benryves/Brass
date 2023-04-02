@@ -1,0 +1,11 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN">
+      <h3 class="brass_specific">.rlemode</h3>
+        <pre class="code">.rlemode <i>run_indicator [, value_first]</i></pre>
+        <p>Sets the current RLE mode - first, the byte value used to represent a run (defaults to <tt>$91</tt>), followed by a flag to set whether the value or the length is written first after the run indicator (defaults to true).</p>
+        <pre class="code">; FILE.BIN contains the string "ABCDDDDDEFG"
+.rlemode $91, 1
+.incbin "file.bin" ; .db 'A','B','C',<u>$91,'D',5</u>,'E','F','G'
+.rlemode $F0, 0
+.incbin "file.bin" ; .db 'A','B','C',<u>$F0,5,'D'</u>,'E','F','G'
+.rlemode $00
+.incbin "file.bin" ; .db 'A','B','C',<u>$00,'D',5</u>,'E','F','G'</pre><link rel="Stylesheet" href="../style.css" />

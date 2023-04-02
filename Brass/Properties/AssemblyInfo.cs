@@ -7,7 +7,7 @@ using System.Resources;
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
 [assembly: AssemblyTitle("Brass Z80 Assembler")]
-[assembly: AssemblyDescription("Maxcoderz Z80 Assembler, written by Ben Ryves with help and support from the Maxcoderz community.")]
+[assembly: AssemblyDescription("Z80 Assembler")]
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("Bee Development")]
 [assembly: AssemblyProduct("Brass Z80 Assembler")]
@@ -30,6 +30,6 @@ using System.Resources;
 //      Build Number
 //      Revision
 //
-[assembly: AssemblyVersion("1.0.1.9")]
-[assembly: AssemblyFileVersion("1.0.1.9")]
+[assembly: AssemblyVersion("1.0.4.8")]
+[assembly: AssemblyFileVersion("1.0.4.8")]
 [assembly: NeutralResourcesLanguageAttribute("en-GB")]

@@ -1,3 +1,0 @@
-.addinstr
-.addinstr instruction args opcode size rule class [shift [or]]
-Solely included for backwards compatibility with TASM, this allows you to manually add an instruction to the Z80 instruction set. The rest of the line should follow the format as demonstrated in the TASM table files. (See TASMTABS.HTM from TASM's zip file for more information).

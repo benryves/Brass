@@ -1,6 +1,0 @@
-.var
-.var size, name
-This is another way to declare a label, designed to make adding variables which point to a location of safe RAM easier. A label is created at the last defined .varloc location, and the .varloc location is incremented by the size of the variable you have just defined.
-----
-Take a look at .varloc for an example and definition that make sense.
-----

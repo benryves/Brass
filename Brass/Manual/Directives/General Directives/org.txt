@@ -1,3 +1,0 @@
-.org
-.org address
-Forces the instruction pointer to a new location. Defaults to zero. The output binary is made up of all the bytes from the lowest address ever written to to the highest address ever written to, so watch out that you don't do anything before issuing the .org directive.

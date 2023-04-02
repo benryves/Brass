@@ -1,0 +1,13 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN">
+        <h3 class="brass_specific">.elseifdef (also #elseifdef) and .elseifndef (also #elseifndef)</h3>
+        <pre class="code">.elseifdef <i>macro</i></pre>
+        <p>The same as <tt class="code">.elseif</tt> except that it uses the <tt class="code">.ifdef</tt> or <tt class="code">.ifndef</tt> conditionals:</p>
+        <pre class="code">#define X marks_the_spot
+
+#ifdef X
+.echo "X is defined.\n"
+#elseifdef Y
+.echo "Y is defined.\n"
+#else
+.echo "Neither X nor Y are defined.\n"
+#endif</pre><link rel="Stylesheet" href="../style.css" />

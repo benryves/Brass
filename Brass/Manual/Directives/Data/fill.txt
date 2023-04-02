@@ -1,6 +1,0 @@
-.fill
-.fill count [, value]
-Outputs 'count' number of bytes, with the value 'value'. If value is not specified, 255 is substituted.
-====
-.fill 3, $BB ; equivalent to .db $BB, $BB, $BB
-====
