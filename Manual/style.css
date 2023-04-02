@@ -109,7 +109,7 @@ th {
 
 #banner {
 	vertical-align: middle;
-	height: 64px;
+	display: block;
 }
 #banner img {
     float: left;
@@ -132,8 +132,8 @@ iframe {
 }
 
 
-#webring {
-    text-align: right;
+#contents {
+
 }
 #contents ul, #contents li {
     margin: 0px 0px 0px 6px;
@@ -143,4 +143,14 @@ iframe {
 
 html {
     background-color: white;
+}
+#webring table td {
+    padding: 5px;
+    background-color: #AAAAFF;
+    font-family: Tahoma,Arial;
+}
+#webring table {
+    align: right !important;
+    margin-left: auto;
+    margin-right: 10px;
 }

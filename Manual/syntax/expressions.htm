@@ -65,21 +65,3 @@ function:
 .echoln fp8.8(0.25) ; 64
 .echoln fp4.4(1.40) ; 22</pre>
     <p>See the <a href="../directives/var.htm">.var</a> directive for more information on the different data types.</p>
-    <p>There is also a <tt>sizeof()</tt> function that returns the size (in bytes) of a particular type or instance of a type.</p>
-    <pre class="code">.struct Point3D
-    .var fp8.8, X
-    .var fp8.8, Y
-    .var fp8.8, Z
-.endstruct
-
-.var Point3D,    SinglePoint
-.var Point3D[8], EightPoints
-
-.echoln "sizeof(Point3D)=\t",     sizeof(Point3D)
-.echoln "sizeof(SinglePoint)=\t", sizeof(SinglePoint)
-.echoln "sizeof(EightPoints)=\t", sizeof(EightPoints)
-
-; Outputs:
-; sizeof(Point3D)=        6
-; sizeof(SinglePoint)=    6
-; sizeof(EightPoints)=    48</pre>

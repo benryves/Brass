@@ -1,14 +1,25 @@
 <link rel="Stylesheet" href="../style.css" />
 <div id="changes">
-
-           <h3>1.0.4.1</h3>
+			<h3>1.0.5.2</h3>
                 <p><b>Bugfixes</b></p>
-                    <p>Functions no longer swallow the entire expression as arguments (<tt class="code">a+f(b)+c</tt> used to be executed as <tt>f(a+b+c)</tt>).</p>
-                <p><b>Features</b></p>
-                    <p><tt class="code"><a href="../syntax/expressions.htm">sizeof()</a></tt> function.</p>
-                    <p><tt class="code">global</tt>, <tt class="code">root</tt>, <tt class="code">parent</tt> and <tt class="code">this</tt> keywords for <a href="../syntax/modules.htm">explicitely pointing to labels within modules</a>.</p>
+                    <p><tt>.branch</tt> directive no longer aligns to 3-byte boundaries.</p>
            <hr />
-           
+		   
+			<h3>1.0.5.1</h3>
+                <p><b>Features</b></p>
+                    <p><tt>defined()</tt> function allows you to check whether macros are defined without needing to nest/duplicate <tt>.ifdef</tt> directives.</p>
+           <hr />
+		   
+			<h3>1.0.5.0</h3>
+                <p><b>Features</b></p>
+                    <p><tt>.appheaderpadding</tt> directive to change the application header padding (defaults to 128 bytes, allows you to reduce the size of the header and free up some space on the first page).</p>
+           <hr />
+		   
+           <h3>1.0.4.11</h3>
+                <p><b>Bugfixes</b></p>
+                    <p>Warns you if the parser goes crazy.</p>
+           <hr />
+
            <h3>1.0.4.0</h3>
                 <p><b>Bugfixes</b></p>
                     <p>Intel hex mode now completely reworked - multipage TI applications now sign.</p>

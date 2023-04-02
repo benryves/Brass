@@ -1,0 +1,9 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN">
+  <h3>sizeof()</h3>
+    <pre class="code">sizeof(<i>type</i>|<i>variable</i>)</pre>
+    <p>Determines the size of a data type or allocated variable.</p>
+    <pre class="code">.var fp8.8[256], TrigTable
+
+.echoln sizeof(fp8.8)     ; Outputs 2, as 8 bits + 8 bits = 16 bits = 2 bytes.
+.echoln sizeof(TrigTable) ; Outputs 512, as sizeof(fp8.8) * 256 = 512 bytes.</pre>
+<link rel="Stylesheet" href="../style.css" />
