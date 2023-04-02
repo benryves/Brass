@@ -9,6 +9,7 @@ namespace Brass {
             CurrentMessageLine += "\n"; // Flush messages
             Console.WriteLine("Writing debug log...");
             try {
+                
                 if (WriteCompleteXmlLog && File.Exists(DbgLogFile)) File.Delete(DbgLogFile);
                 using (TextWriter T = new StreamWriter(DbgLogFile, !WriteCompleteXmlLog)) {
                     if (WriteCompleteXmlLog) T.WriteLine("<brass version=\"{0}\">", VersionString);
@@ -50,10 +51,18 @@ namespace Brass {
 
         }
 
+        //private static List<string> DisplayedPaths = new List<string>();
+
         private static void WriteModuleLabels(TextWriter T, Module Start) {
 
             T.WriteLine("<module name=\"{0}\">", EscapeHTML(Start.Name));
             foreach (KeyValuePair<string, LabelDetails> L in Start.Labels) {
+
+                /*if (!DisplayedPaths.Contains(L.Value.File)) {
+                    DisplayedPaths.Add(L.Value.File);
+                    Console.WriteLine("FILE = " + L.Value.File + "~" + L.Value.FullPath);
+                }*/
+
                 T.Write("<label name=\"{0}\" value=\"{1}\" page=\"{2}\" type=\"{3}\" fullname=\"{4}\" file=\"{5}\" line=\"{6}\" exported=\"{7}\"",
                     EscapeHTML(L.Value.Name),
                     L.Value.RealValue.ToString(InvariantCulture),

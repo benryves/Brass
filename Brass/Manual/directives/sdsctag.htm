@@ -1,9 +1,0 @@
-<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN">
-        <h3 class="brass_specific">.sdsctag</h3>
-        <pre class="code">.sdsctag <i>version, title, description, author</i></pre>
-        <p>Tells Brass to add an SDSC tag to the output binary (provided either Master System or Game Gear modes have been set using the <tt class="code">.binarymode</tt> directive). Version is expected to be in the form <tt>x.y</tt> (major and minor), the other three fields should either be string constants or pointers to strings. Brass will try to find free space in the ROM and create the strings/pointers for you if you specify a string constant. For this reason, you cannot assume that all free space will have the value of <tt class="code">.binaryfill</tt> when using this directive with string constants, as one of the SDSC tag strings might have been copied there.</p>
-        <pre class="code">.sdsctag 1.03, title, "SDSC tag demo", "Ben Ryves"
-        
-title:
-    .db "Demo", 0</pre>
-        <p>Tags must reside within the first $FFFF bytes of the ROM. Version numbers have a limit of 99 (99.99). Other values will be truncated.</p><link rel="Stylesheet" href="../style.css" />

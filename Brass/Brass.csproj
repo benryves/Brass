@@ -97,6 +97,6 @@
   </Target>
   -->
   <PropertyGroup>
-    <PostBuildEvent>Copy "$(TargetPath)" "$(SolutionDir)..\Latenite\Latenite\bin\Compile\"</PostBuildEvent>
+    <PostBuildEvent>Copy "$(TargetPath)" "$(SolutionDir)..\..\Latenite\Latenite\bin\Compile\"</PostBuildEvent>
   </PropertyGroup>
 </Project>

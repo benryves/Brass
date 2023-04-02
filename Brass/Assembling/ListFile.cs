@@ -20,6 +20,7 @@ namespace Brass {
                 T.WriteLine("#asmout td.f { background-color: #9999FF; text-align: center; border: 1px solid #333333; }");
                 T.WriteLine("#asmout td.p { background-color: #99FF99; text-align: center; border: 1px solid #333333; }");
                 T.WriteLine("#asmout td.j { background-color: #FF9999; text-align: center; border: 1px solid #333333; }");
+                T.WriteLine("#asmout td.l { background-color: #CCCCFF; text-align: center; border: 1px solid #333333; }");
                 T.WriteLine("#asmout td.c { text-align: center; }");
                 T.WriteLine("#asmout th, #ascii th { font-weight: bold; text-align: center; background-color: black; color: white;}");
                 T.WriteLine("#ascii td { text-align: center; width: 24px; } #unused { color: #999999; }");
@@ -42,6 +43,35 @@ namespace Brass {
                 T.WriteLine("<tr class=\"r1\"><td>Page Count</td><td>{0}</td></tr>", Pages.Count);
                 T.WriteLine("</table>");
 
+
+                List<LabelDetails> AllLabels = GetAllLabels();
+                Dictionary<int, List<LabelDetails>> LabelNames = new Dictionary<int, List<LabelDetails>>();
+
+           
+
+                foreach (LabelDetails l in AllLabels) {
+                    List<LabelDetails> s;
+                    if (!LabelNames.TryGetValue(l.Value, out s)) {
+                        s = new List<LabelDetails>();
+                        LabelNames.Add(l.Value, s);
+                    }
+                    s.Add(l);
+                }
+
+                Dictionary<int, List<KeyValuePair<uint, string>>> ReusableList = new Dictionary<int, List<KeyValuePair<uint, string>>>();
+                for (int s = 0; s < 2; ++s) {
+                    foreach (KeyValuePair<int, ReusableLabelTracker> kvp in ReusableLabels[s]) {
+                        string Symbol = "".PadRight(kvp.Key, "-+"[s]);
+                        foreach (LabelDetails l in kvp.Value.AllLabels) {
+                            List<KeyValuePair<uint, string>> c;
+                            if (!ReusableList.TryGetValue(l.Value, out c)) {
+                                c = new List<KeyValuePair<uint, string>>();
+                                ReusableList.Add(l.Value, c);
+                            }
+                            c.Add(new KeyValuePair<uint, string>(l.Page, Symbol));
+                        }
+                    }
+                }
 
                 if (ASCIITable.Count != 0) {
                     //List<AsciiMapSorter> s = new List<AsciiMapSorter>(ASCIITable.Count);
@@ -117,7 +147,15 @@ namespace Brass {
 
                         string HexOut = "";
                         if (!LastLine.HasValue || LastLine != O[0].LineNumber) {
-                            FileLines = SourceFiles[O[0].Filename.ToLower()];
+                            if (!SourceFiles.TryGetValue(O[0].Filename, out FileLines)) {
+                                foreach (KeyValuePair<string, string[]> var in SourceFiles) {
+                                    if (var.Key.ToLowerInvariant() == O[0].Filename.ToLowerInvariant()) {
+                                        FileLines = var.Value;
+                                        break;
+                                    }
+                                }
+                                throw new Exception("It's that blasted key/dictionary bug.");
+                            }
                         }
                         int HexCharCount = 0;
 
@@ -142,11 +180,39 @@ namespace Brass {
                             T.WriteLine("<tr><td class=\"j\" colspan=\"4\">Skipped {0} bytes</td></tr>", O[0].Address - RunningAddressCounter);
                         }
 
-                        T.WriteLine("<tr class=\"r{3}\"><td class=\"c\">{0:X4}</td><td>{1}</td><td>{2}</td></tr>",
+
+
+                        List<LabelDetails> LabelsForThisAddress;
+                        if (LabelNames.TryGetValue((int)O[0].Address, out LabelsForThisAddress)) {
+                            foreach (LabelDetails l in LabelsForThisAddress) {
+                                if (l.Page == O[0].Page && !l.IsVariable && l.IsUnmolested) {
+                                    T.WriteLine("<tr><td class=\"l\" colspan=\"4\">{0}</td></tr>", l.FullPath);
+                                }
+                            }
+                        }
+
+
+                        string Reusables = "";
+                        List<KeyValuePair<uint, string>> ReusablesForThisAddress;
+                        if (ReusableList.TryGetValue((int)O[0].Address, out ReusablesForThisAddress)) {
+                            List<string> R = new List<string>();
+                            foreach (KeyValuePair<uint, string> l in ReusablesForThisAddress) {
+                                if (l.Key == O[0].Page) {
+                                    R.Add(l.Value);
+                                }
+                            }
+                            R.Sort();
+                            Reusables = "[" + string.Join(", ", R.ToArray()) + "] &rarr; ";
+                        }
+
+
+
+                        T.WriteLine("<tr class=\"r{3}\"><td class=\"c\">{0:X4}</td><td>{1}</td><td>{4}{2}</td></tr>",
                             O[0].Address,
                             HexOut,
                             EscapeHTML(FileLines[O[0].LineNumber - 1]).Trim(),
-                            (RowCount++) & 1);
+                            (RowCount++) & 1,
+                            Reusables);
 
                         RunningAddressCounter = O[0].Address + (uint)O.Length;
                     }
@@ -158,8 +224,7 @@ namespace Brass {
                 }
 
 
-                T.WriteLine("<h1>Variables</h1>");
-                List<LabelDetails> AllLabels = GetAllLabels();                
+                /*T.WriteLine("<h1>Variables</h1>");
                 
                 AllLabels.Sort();
                 T.WriteLine("<table id=\"asmout\">");
@@ -168,13 +233,11 @@ namespace Brass {
                         T.WriteLine("<tr><td>{0}</td><td>{1:X4}</td></tr>", EscapeHTML(l.FullPath), l.Value);
                     }
                 }
-                T.WriteLine("</table>");
+                T.WriteLine("</table>");*/
                 
 
 
                 T.WriteLine("</body></html>");
-
-
 
             }
         }

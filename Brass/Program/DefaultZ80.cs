@@ -62,9 +62,9 @@ namespace Brass {
             AllInstructions.Add(new Instruction("and", "h", 1, new byte[] { 0xA4 }, Instruction.InstructionRule.NoTouch, 1, 0, 0x0000));
             AllInstructions.Add(new Instruction("and", "l", 1, new byte[] { 0xA5 }, Instruction.InstructionRule.NoTouch, 1, 0, 0x0000));
             AllInstructions.Add(new Instruction("and", "ixh", 2, new byte[] { 0xDD, 0xA4 }, Instruction.InstructionRule.NoTouch, 1, 0, 0x0000));
-            AllInstructions.Add(new Instruction("and", "ixl", 2, new byte[] { 0xDD, 0xA4 }, Instruction.InstructionRule.NoTouch, 1, 0, 0x0000));
+            AllInstructions.Add(new Instruction("and", "ixl", 2, new byte[] { 0xDD, 0xA5 }, Instruction.InstructionRule.NoTouch, 1, 0, 0x0000));
             AllInstructions.Add(new Instruction("and", "iyh", 2, new byte[] { 0xFD, 0xA4 }, Instruction.InstructionRule.NoTouch, 1, 0, 0x0000));
-            AllInstructions.Add(new Instruction("and", "iyl", 2, new byte[] { 0xFD, 0xA4 }, Instruction.InstructionRule.NoTouch, 1, 0, 0x0000));
+            AllInstructions.Add(new Instruction("and", "iyl", 2, new byte[] { 0xFD, 0xA5 }, Instruction.InstructionRule.NoTouch, 1, 0, 0x0000));
             AllInstructions.Add(new Instruction("and", "*", 2, new byte[] { 0xE6 }, Instruction.InstructionRule.NoTouch, 1, 0, 0x0000));
             AllInstructions.Add(new Instruction("bit", "*,(hl)", 2, new byte[] { 0xCB, 0x46 }, Instruction.InstructionRule.ZBit, 1, 0, 0x0000));
             AllInstructions.Add(new Instruction("bit", "*,(ix*)", 4, new byte[] { 0xDD, 0xCB }, Instruction.InstructionRule.ZBit, 1, 0, 0x4600));
@@ -363,9 +363,9 @@ namespace Brass {
             AllInstructions.Add(new Instruction("or", "h", 1, new byte[] { 0xB4 }, Instruction.InstructionRule.NoTouch, 1, 0, 0x0000));
             AllInstructions.Add(new Instruction("or", "l", 1, new byte[] { 0xB5 }, Instruction.InstructionRule.NoTouch, 1, 0, 0x0000));
             AllInstructions.Add(new Instruction("or", "ixh", 2, new byte[] { 0xDD, 0xB4 }, Instruction.InstructionRule.NoTouch, 1, 0, 0x0000));
-            AllInstructions.Add(new Instruction("or", "ixl", 2, new byte[] { 0xDD, 0xB4 }, Instruction.InstructionRule.NoTouch, 1, 0, 0x0000));
+            AllInstructions.Add(new Instruction("or", "ixl", 2, new byte[] { 0xDD, 0xB5 }, Instruction.InstructionRule.NoTouch, 1, 0, 0x0000));
             AllInstructions.Add(new Instruction("or", "iyh", 2, new byte[] { 0xFD, 0xB4 }, Instruction.InstructionRule.NoTouch, 1, 0, 0x0000));
-            AllInstructions.Add(new Instruction("or", "iyl", 2, new byte[] { 0xFD, 0xB4 }, Instruction.InstructionRule.NoTouch, 1, 0, 0x0000));
+            AllInstructions.Add(new Instruction("or", "iyl", 2, new byte[] { 0xFD, 0xB5 }, Instruction.InstructionRule.NoTouch, 1, 0, 0x0000));
             AllInstructions.Add(new Instruction("or", "*", 2, new byte[] { 0xF6 }, Instruction.InstructionRule.NoTouch, 1, 0, 0x0000));
             AllInstructions.Add(new Instruction("otdm", "\"\"", 2, new byte[] { 0xED, 0x8B }, Instruction.InstructionRule.NoTouch, 2, 0, 0x0000));
             AllInstructions.Add(new Instruction("otdmr", "\"\"", 2, new byte[] { 0xED, 0x9B }, Instruction.InstructionRule.NoTouch, 2, 0, 0x0000));

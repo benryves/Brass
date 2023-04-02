@@ -1,7 +1,0 @@
-<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN">
-     <h3 class="brass_specific">.incbmp</h3>
-        <pre class="code">.incbmp <i>filename [, threshold] [, rle] [, width = width] [, height = height]</i></pre>
-        <p>This directive can be used to load a monochrome bitmap image (BMP, PNG, GIF, JPEG...) and include it directly into your program. The bitmap is padded with 0s to make it a multiple of 8 bits wide, and a 1 corresponds to a black pixel. Any pixel which is darker than the threshold (which defaults to 127) is considered black, any pixel brighter is considered white  Specifying the flag <tt class="code">RLE</tt> compresses the data after conversion. Using the width/height flags forces the bitmap data to a particular size; note that the image is not scaled or repositioned in any way (merely aligned top-left and cropped to the final size).</p>
-        <pre class="code">; Load test.gif;
-; force width to 32 and apply RLE.
-.incbmp test.gif, rle, width = 32</pre><link rel="Stylesheet" href="../style.css" />

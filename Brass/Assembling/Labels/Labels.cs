@@ -49,6 +49,8 @@ namespace Brass {
             public uint Page = 0;
             public bool ExportMe = false;
 
+            public bool IsUnmolested = true;
+
             //private Dictionary<string, LabelDetails> Owner = null;
             public readonly Module OwnerModule;
 
@@ -181,7 +183,7 @@ namespace Brass {
         public static char[] Reusables = { '+', '-' };
         public static char[] InvalidChars = { '+', '-', '*', '/', ':', '(', ')', '<', '>', '&', '%', '^', '|' };
 
-        public static bool AddNewLabel(string Name, double Value, bool ForceNewLabel, string SourceFile, int Line, Pass PassNumber, uint Page) {
+        public static bool AddNewLabel(string Name, double Value, bool ForceNewLabel, string SourceFile, int Line, Pass PassNumber, uint Page, bool Unmolested) {
             if (Name != "") {
                 if (Name == "@") {
                     if (PassNumber == Pass.Labels) {
@@ -216,6 +218,7 @@ namespace Brass {
                         ToAdd.Line = Line;
                         ToAdd.File = SourceFile;
                         ToAdd.Page = Page;
+                        ToAdd.IsUnmolested = Unmolested;
                         return true;
                     }
                 }
@@ -360,7 +363,7 @@ namespace Brass {
                 Label = null;
             } else {
                 Module ToAddTo = IsGlobal ? GlobalLabels : ModulesToCheck[0];
-                Label = new LabelDetails(null, Name, 0, "", 0, CurrentPage.Page, ToAddTo, false);
+                Label = new LabelDetails(null, Name, 0, CurrentFilename, 0, CurrentPage.Page, ToAddTo, false);
                 ToAddTo.Labels.Add(IsCaseSensitive ? Name : Name.ToLower(), Label);
                 /*if (IsGlobal) {
                     GlobalLabels.Labels.Add(IsCaseSensitive ? Name : Name.ToLower(), Label);

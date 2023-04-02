@@ -1,3 +1,4 @@
+
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -88,13 +89,20 @@ namespace Brass {
             public Instruction MatchedInstruction;
             public List<string> Arguments;
             public int FindFirstChar;
-            public MatchedAssemblyNugget(int FindFirstChar) {
+			public string Filename;
+			public int LineNumber;
+
+			public MatchedAssemblyNugget(int FindFirstChar, string filename, int lineNumber) {
                 this.FindFirstChar = FindFirstChar;
+				this.Filename = filename;
+				this.LineNumber = lineNumber;
             }
-            public MatchedAssemblyNugget(Instruction MatchedInstruction, List<string> Arguments, int FindFirstChar) {
+            public MatchedAssemblyNugget(Instruction MatchedInstruction, List<string> Arguments, int FindFirstChar, string filename, int lineNumber) {
                 this.MatchedInstruction = MatchedInstruction;
                 this.Arguments = Arguments;
                 this.FindFirstChar = FindFirstChar;
+				this.Filename = filename;
+				this.LineNumber = lineNumber;
             }
         }
 
@@ -647,7 +655,7 @@ namespace Brass {
                                                         using (BinaryReader BR = new BinaryReader(new FileStream(FullFilename, FileMode.Open))) {
 
                                                             if (SizeLabel != "") {
-                                                                if (!AddNewLabel(SizeLabel, (int)BR.BaseStream.Length, false, Filename, CurrentLineNumber, PassNumber, 0)) {
+                                                                if (!AddNewLabel(SizeLabel, (int)BR.BaseStream.Length, false, Filename, CurrentLineNumber, PassNumber, 0, false)) {
                                                                     DisplayError(ErrorType.Warning, "Could not create file size label '" + SizeLabel + "'.", Filename, CurrentLineNumber);
                                                                 }
                                                             }
@@ -989,7 +997,7 @@ namespace Brass {
                                                 }
                                                 double NewValue = Evaluate(LabelArgs[0]);
                                                 uint PageN = LabelArgs.Length == 2 ? UintEvaluate(LabelArgs[1]) : CurrentPage.Page;
-                                                AddNewLabel(JustHitLabelName, NewValue, true, Filename, CurrentLineNumber, PassNumber, PageN);
+                                                AddNewLabel(JustHitLabelName, NewValue, true, Filename, CurrentLineNumber, PassNumber, PageN, false);
                                             } catch (Exception ex) {
                                                 DisplayError(ErrorType.Error, "Could not assign value '" + RestOfLine + "' to label '" + JustHitLabelName + "' (" + ex.Message + ").", Filename, CurrentLineNumber);
                                             } finally {
@@ -2052,7 +2060,7 @@ namespace Brass {
                                                         string LN = new string(BR.ReadChars(BR.ReadByte()));
                                                         uint LV = BR.ReadUInt16();
                                                         uint LP = BR.ReadUInt16();
-                                                        if (!AddNewLabel(LN, LV, false, Filename, CurrentLineNumber, Pass.Labels, LP)) {
+                                                        if (!AddNewLabel(LN, LV, false, Filename, CurrentLineNumber, Pass.Labels, LP, false)) {
                                                             DisplayError(ErrorType.Error, "Could not add label " + LN, Filename, CurrentLineNumber);
                                                             if (StrictMode) return false;
                                                         }
@@ -2258,6 +2266,7 @@ namespace Brass {
                                                         }
                                                     }
                                                     LabelDetails EnumLabel = new LabelDetails(null, LabelName, LabelValue, Filename, CurrentLineNumber, CurrentPage.Page, ToAddTo, false);
+                                                    EnumLabel.IsUnmolested = false;
                                                     if (EnumItem.Length != 2) Unallocated.Add(EnumLabel);
                                                     Enum.Labels.Add(LookupName, EnumLabel);
                                                 }
@@ -2487,7 +2496,7 @@ namespace Brass {
                                         if (!IsReusable && !IsValidLabelName(CheckLabelName, out err)) {
                                             DisplayError(ErrorType.Error, "Invalid label name '" + CheckLabelName + "' (" + err + ").", Filename, CurrentLineNumber);
                                             if (StrictMode) return false;
-                                        } else if (!AddNewLabel(CheckLabelName, CurrentPage.ProgramCounter + RelocationOffset, (EndOfLabel != -1 && SourceLine.Trim().StartsWith("=")), Filename, CurrentLineNumber, PassNumber, CurrentPage.Page)) {
+                                        } else if (!AddNewLabel(CheckLabelName, CurrentPage.ProgramCounter + RelocationOffset, (EndOfLabel != -1 && SourceLine.Trim().StartsWith("=")), Filename, CurrentLineNumber, PassNumber, CurrentPage.Page, true)) {
                                             if (StrictMode) return false;
                                         }
                                     } else {
@@ -2571,22 +2580,32 @@ namespace Brass {
 
                                         if (I == null) {
                                             DisplayError(ErrorType.Error, "Argument '" + Args + "' (for '" + Instr + "') not understood.", Filename, CurrentLineNumber);
-                                            MatchedAssembly.Enqueue(new MatchedAssemblyNugget(FindFirstChar));
+                                            MatchedAssembly.Enqueue(new MatchedAssemblyNugget(FindFirstChar, CurrentFilename, CurrentLineNumber));
                                             if (StrictMode) return false;
                                         } else {
                                             FindFirstChar = MultipleStatements[0].Length;
-                                            MatchedAssembly.Enqueue(new MatchedAssemblyNugget(I, MatchedArgs, FindFirstChar));
+                                            MatchedAssembly.Enqueue(new MatchedAssemblyNugget(I, MatchedArgs, FindFirstChar, CurrentFilename, CurrentLineNumber));
+											//Console.WriteLine("ENQ\t" + CurrentLineNumber + "\t" + Path.GetFileName(CurrentFilename));
                                             CurrentPage.ProgramCounter += (uint)(I.Size);
                                             continue;
                                         }
                                     }
                                 } else {
                                     #region Assemble
+
+									//Console.WriteLine("DEQ\t" + CurrentLineNumber + "\t" + Path.GetFileName(CurrentFilename));
                                     if (MatchedAssembly.Count == 0) {
                                         DisplayError(ErrorType.Error, "Fatal assembly error (unidentified previous instruction).", Filename, CurrentLineNumber);
                                         return false;
                                     }
                                     MatchedAssemblyNugget MAN = MatchedAssembly.Dequeue();
+
+									if (MAN.LineNumber != CurrentLineNumber || MAN.Filename != CurrentFilename) {
+										DisplayError(ErrorType.Error, "Fatal parser error. Check syntax.", CurrentFilename, CurrentLineNumber);
+										MatchedAssembly.Clear();
+										return false;
+									}
+
                                     Instruction I = MAN.MatchedInstruction;
                                     List<string> SourceArgs = MAN.Arguments;
 
