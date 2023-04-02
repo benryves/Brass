@@ -1,0 +1,26 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN">
+        <h3 class="brass_specific">.incbin (also #incbin)</h3>
+        <pre class="code">.incbin <i>filename</i> [, rle] [, label=size] [, start=index] [, end=index] [, rule=expr]</pre>
+        <p>Inserts a binary file straight into the output - no assembling is done. This can be useful to hold data (such as sprites or large amounts of text) in an external file in a raw format, rather than having to expand to multiple <tt class="code">.db</tt> statements.</p>
+        <p>A more novel use of <tt class="code">.incbin</tt> would be to use it to load a preassembled chunk of code into your program. By using the <tt class="code">.export</tt> directive you could also get it to export the correct label addresses as you assemble the original block.</p>
+        <p>Setting the flag <tt class="code">RLE</tt> causes the binary to be RLE compressed using the current RLE mode settings.</p>
+        <p>Specifying a label name, followed by <tt class="code">=size</tt>, creates a new label containing the size of the original binary (uncompressed).</p>
+        <pre class="code">file_start
+.incbin "readme.txt", rle, uncompressed = size
+file_end
+
+compressed = file_end - file_start
+
+.echo "README.TXT compressed from "
+.echo uncompressed
+.echo "b to "
+.echo compressed
+.echo "b ("
+.echo (compressed * 100) / uncompressed
+.echo "%)\n"</pre>
+        <p>The <tt>start</tt> and <tt>end</tt> flags allow you to specify the range of data inside the file that you want to include (zero-indexed). For example, a <tt class="code">start = 256</tt> would ignore the first 256 bytes of data in the file. <tt>end</tt> points to the last byte you want included. <tt class="code">start=1, end=3</tt> would include bytes 1, 2 and 3 into the final binary. By combining them with a size label, you could do things like this:</p>
+        <pre class="code">.incbin "hello.txt", start=1, end=total-2, total=size</pre>
+        <p>...which would strip out the first and last byte from the binary.</p>
+        <p>Last of all is the <tt>rule</tt> field. This works like the <tt class="code">.asciimap</tt> directive - for each byte of the binary, an expression is evaluated to translate the byte in some way. The special string <tt class="code">{*}</tt>represents the byte being translated. For example, the rule <tt class="code">rule={*}+1</tt> would add 1 to each byte.</p>
+        <pre class="code">rule=({*}&gt;='a'&amp;&amp;{*}&lt;='z')?(({*}-'a')+13)%26+'a':(({*}&gt;='A'&amp;&amp;{*}&lt;='Z')?(({*}-'A')+13)%26+'A':{*})</pre>
+        <p>The above rule would perform rot13 on all alphabetic characters. How useful. Note that if you use the <tt class="code">$</tt> symbol as the current program counter in your rule then it will be set to the program counter <i>at the start location the binary is loaded into</i>. It is not updated during the translation (as this would cause all sorts of madness).</p><link rel="Stylesheet" href="../style.css" />

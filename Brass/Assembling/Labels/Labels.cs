@@ -57,6 +57,7 @@ namespace Brass {
             public IType Type;
 
             public bool IsVariable;
+			public bool IsVariableAllocated;
             public bool TempVariable = false;
 
             public int ArrayCount = 1;

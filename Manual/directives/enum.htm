@@ -1,0 +1,16 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN">
+  <h3 class="brass_specific">.enum</h3>
+        <pre class="code">.enum <i>name, item1 [= value] [, item2 [= value] [, item3 [= value] [...]]]</i></pre>
+        <p>Defines an enumeration. These can be used to generate a batch of labels with unique values, or a way of grouping constants. Here are a few examples:</p>
+        <pre class="code">.enum Name, Tom, Dick, Harry
+
+Demo1 = Name.Tom   ; 0
+Demo2 = Name.Dick  ; 1
+Demo3 = Name.Harry ; 2
+
+.enum Number, One = 1, Two = 2, Three = 3, FourtyNine = 49
+
+    ld a, Number.FourtyNine</pre>
+    <p>Names which do not have a value specifically chosen will have a unique value assigned to them afterwards. It is possible, however, to assign two different names with the same value.</p>
+        
+        <link rel="Stylesheet" href="../style.css" />

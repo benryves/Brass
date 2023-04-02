@@ -29,6 +29,7 @@ namespace Brass {
         public static bool AppNoSplash = true;
         public static byte AppHardware = 0;
         public static ushort AppBasecode = 0;
+		public static uint AppHeaderPadding = 128;
 
         public static byte[] CreateAppHeader() {
             List<byte> AppHeader = new List<byte>(128);
@@ -76,7 +77,7 @@ namespace Brass {
             if (AppUses != 0) AddAppField(AppHeader, AppField.OveruseCount, (byte)AppUses);
 
             // Pad
-            while (AppHeader.Count < 128) AppHeader.Add(0x00);
+            while (AppHeader.Count < AppHeaderPadding) AppHeader.Add(0x00);
             if (AppHeader.Count > 128) {
                 DisplayError(ErrorType.Warning, "Application header size > 128 bytes.");
             }

@@ -19,7 +19,9 @@ namespace Brass {
                     } else {
                         return (double)WorkingType.Size;
                     }
-                    
+				case "defined":
+					var macroName = InsideFunction.Trim();
+					return AvailableMacros.ContainsKey(IsCaseSensitive ? macroName : macroName.ToLowerInvariant()) ? 1.0d : 0.0d;
                 default:
                     if (TryGetTypeInformation(FunctionName, out WorkingType)) {
                         try {

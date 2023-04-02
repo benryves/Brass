@@ -241,10 +241,26 @@ namespace Brass {
 
                 foreach (Error E in ErrorLog) {
                     if (E.E == ErrorType.Error) {
-                        DisplayError(ErrorType.Message, "Could not fit all variables into variable areas.\n");
+                        DisplayError(ErrorType.Error, "Could not fit all variables into variable areas.\n");
                         return false;
                     }
                 }
+
+				// Do we need to correct variable allocation?
+				StartTime = DateTime.Now;
+
+				/*foreach (var item in GetAllLabels()) {
+					
+				}*/
+				
+
+				ResetStateOnPass();
+				if (AssembleFile(Filename, Pass.Labels)) {
+					PassTime = DateTime.Now - StartTime;
+					Console.WriteLine("Pass 1 repeated to correct variables ({0}ms).", (int)PassTime.TotalMilliseconds);
+				} else {
+					return false;
+				}
 
                 StartTime = DateTime.Now;
 
@@ -2340,7 +2356,7 @@ namespace Brass {
                                     case ".branch":
                                         #region Branch table generation
                                         string[] LabelsToExport = SafeSplit(RestOfLine, ',');
-                                        while ((CurrentPage.ProgramCounter - CurrentPage.StartAddress) % 3 != 0) ++CurrentPage.ProgramCounter;
+                                        //while ((CurrentPage.ProgramCounter - CurrentPage.StartAddress) % 3 != 0) ++CurrentPage.ProgramCounter;
                                         switch (PassNumber) {
                                             case Pass.Labels:
                                                 foreach (string LN in LabelsToExport) {
@@ -2443,7 +2459,18 @@ namespace Brass {
                                         }
                                         #endregion
                                         break;
-                                    default:
+									case ".appheaderpadding":
+										#region Application Header Padding
+										if (PassNumber == Pass.Labels) break;
+										try {
+											AppHeaderPadding = (uint)UintEvaluate(RestOfLine);
+                                        } catch (Exception ex) {
+                                            DisplayError(ErrorType.Error, "Could not evaluate '" + RestOfLine + "' (" + ex.Message + ").", Filename, CurrentLineNumber);
+                                            if (StrictMode) return false;
+                                        }
+										break;
+										#endregion
+									default:
                                         DisplayError(ErrorType.Error, "Unsupported directive '" + Command + "'.", Filename, CurrentLineNumber);
                                         if (StrictMode) return false;
                                         break;

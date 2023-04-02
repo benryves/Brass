@@ -1,0 +1,13 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN">
+       <h3>.export</h3>
+        <pre class="code">.export <i>[label [, label [, label [, ...]]]]</i></pre>
+        <p>This tells Brass to add a label name to the label export file. If you do not specify any label names, any named labels defined after that point will be exported.</p>
+        <pre class="code">.org $100
+start_of_code:
+    .dw $FAFF
+end_of_code:
+        
+.export start_of_code, end_of_code</pre>
+        <p>This would produce the following label export file:</p>
+        <pre class="code">start_of_code   .equ    $0100
+end_of_code     .equ    $0102</pre><link rel="Stylesheet" href="../style.css" />

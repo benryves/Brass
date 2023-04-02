@@ -65,12 +65,15 @@ namespace Brass {
                 writer.WriteLine(new HexFileRecord(this.HexFileFormat, new byte[] { (byte)(page.Page >> 8), (byte)(page.Page) }, 0x0000, HexFileRecord.RecordType.ExtendedSegmentAddress));
             }
             List<byte> Data = new List<byte>();
-            uint StartAddress = page.BinaryStartLocation;
+			uint? StartAddress = null;
             for (uint i = page.BinaryStartLocation; i <= page.BinaryEndLocation; ++i) {
-                if (page.OutputBinary[i].WriteCount > 0) Data.Add(page.OutputBinary[i].Data);
+				if (page.OutputBinary[i].WriteCount > 0) {
+					Data.Add(page.OutputBinary[i].Data);
+					if (!StartAddress.HasValue) StartAddress = i;
+				}
                 if (Data.Count > 0 && (i == page.BinaryEndLocation || page.OutputBinary[i].WriteCount == 0 || Data.Count >= 0x20)) {
-                    writer.WriteLine(new HexFileRecord(this.HexFileFormat, Data.ToArray(), StartAddress + page.StartAddress));
-                    StartAddress = i + 1;
+                    writer.WriteLine(new HexFileRecord(this.HexFileFormat, Data.ToArray(), StartAddress.Value + page.StartAddress));
+					StartAddress = null;
                     Data.Clear();
                 }
             }

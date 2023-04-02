@@ -1,0 +1,30 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN">
+		<h3 class="brass_specific">.using</h3>
+		<pre class="code">.using <i>module</i></pre>
+		<p>
+			Allows access to a module's local labels from the current module. The current module <i>always</i> takes priority, and any modules added through <tt class="code">.using</tt> are given more priority based on the how early they were added. For example:
+			<pre class="code">.module Main
+_label = 1
+.endmodule
+
+.module Test1
+    ld a,_label ; Assembler error.
+.endmodule
+
+.module Test2
+.using Main
+    ld a,_label ; a = 1.
+.endmodule
+
+.module Test3
+.using Main
+    ld a,_label ; a = 2
+_label = 2
+.endmodule
+
+.module Test4
+.using Test3
+.using Main
+    ld a,_label ; a = 2 (Test 3 takes priority)
+.endmodule</pre>
+		</p><link rel="Stylesheet" href="../style.css" />

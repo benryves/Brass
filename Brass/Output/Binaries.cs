@@ -217,7 +217,7 @@ namespace Brass {
                         return false;
                     }
                     bool OverwrittenPage0 = false;
-                    for (int i = 0; i < 128; ++i) {
+					for (int i = 0; i < Header.Length; ++i) {
                         if (Page0.OutputBinary[i].WriteCount != 0) {
                             OverwrittenPage0 = true;
                         }

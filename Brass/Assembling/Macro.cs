@@ -164,6 +164,9 @@ namespace Brass {
         /// Step through every token in a string and do some magic on it.
         /// </summary>
         public static string TokenedReplacement(string StringToProcess, bool IsMacro, object ExtraData, string[] Replacements) {
+
+			//Console.WriteLine(StringToProcess);
+
             if (!IsMacro && Replacements.Length == 0) return StringToProcess;
 
             if (ExtraData != null) StringToProcess = StringToProcess.Replace("{#}", UniqueMacroIndex.ToString());
@@ -272,6 +275,7 @@ namespace Brass {
         /// <param name="RestOfLine">The rest of the source line (to check for arguments).</param>
         /// <returns>The line of code, macros fully expanded.</returns>
         public static string ApplyMacro(string Token, ref string RestOfLine) {
+
             // Try and find a macro
             Macro FoundMacro;
 
@@ -351,7 +355,7 @@ namespace Brass {
                     }
                 }
 
-                if (Replacement == null) {
+                if (Replacement == null /* Following added to prevent infinite recursion -> */ || Replacement.ReplacementString.Trim().ToLowerInvariant() == Token.Trim().ToLowerInvariant()) {
                     // No macro signatures matched
                     return Token;
                 } else {

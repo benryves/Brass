@@ -11,7 +11,7 @@ using System.Resources;
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("Bee Development")]
 [assembly: AssemblyProduct("Brass Z80 Assembler")]
-[assembly: AssemblyCopyright("Copyright ©  2005-2006")]
+[assembly: AssemblyCopyright("Copyright © Ben Ryves 2005-2013")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 
@@ -30,6 +30,6 @@ using System.Resources;
 //      Build Number
 //      Revision
 //
-[assembly: AssemblyVersion("1.0.4.11")]
-[assembly: AssemblyFileVersion("1.0.4.11")]
+[assembly: AssemblyVersion("1.0.5.3")]
+[assembly: AssemblyFileVersion("1.0.5.3")]
 [assembly: NeutralResourcesLanguageAttribute("en-GB")]

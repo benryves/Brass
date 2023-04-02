@@ -1,0 +1,7 @@
+<link rel="Stylesheet" href="../style.css" />
+    <h3>Environment Variables</h3>
+    <p>The macro preprocessor also substitutes enviroment variables. This can be very useful in an IDE such as Latenite, which passes information to the build scripts in the form of environment variables.</p>
+    <p>Include environment variables by surrounding them with <tt>'[%'</tt> and <tt>'%]'</tt>. For example:</p>
+    <pre class="code">debug_lev   .equ    [%debug_level%]</pre>
+    <p>You could set the variable <tt>debug_level</tt> on the command line by typing <tt class="code">SET debug_level=4</tt> (or whichever value you so wish). These are handled by the preprocessor, and work all over the place - inside string constants, as <tt class="code">#define</tt> arguments... wherever they are needed, really. If you wish to use a string, you can escape it by surrounding the environment variable name with <tt>$</tt>dollar signs<tt>$</tt>, like this:</p>
+    <pre class="code">.echo "Your path variable is [%$PATH$%]\n"</pre>
