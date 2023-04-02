@@ -1,0 +1,3 @@
+.fillw
+.fillw count [, value]
+Performs the same operation as .fill except that it outputs words rather than bytes.

@@ -1,0 +1,127 @@
+<html>
+    <head>
+        <style>
+         p, li {
+            font-family: verdana, tahoma, helvetica;
+            font-size: 12px;
+            padding: 0px;
+            margin: 5px;
+        }
+        h1, h2, h3 {
+            font-family: tahoma, helvetica;
+        }
+        .current {
+            background: #EEEEFF;
+            padding: 10px;
+        }
+        td {
+            vertical-align: top;
+            padding: 20px;
+            text-align: center;
+        }
+        .apology {
+            border-width: 1px;
+            border-style: solid;
+            border-color: maroon;
+            background: #FFCCCC;
+            padding: 20px;
+        }
+        hr {
+            border-style: solid;
+            border-color: black;
+            border-width: 1px;
+            height: 1px;
+            border-color: #CCCCCC;
+            
+        }
+        a {
+            color: black;
+            background: #EEEEEE;
+        }
+        a:hover {
+            background: #9999CC;
+        }
+        </style>
+    </head>
+    <title>Brass Z80 Assembler</title>
+    <body>
+
+        <table><tr><td width="50%">
+            <img src="pig.png"  width="48" height="48" title="Oink" />
+            <h1>Brass Download Page</h1>
+        <h2><a href="Brass.exe">Download the Latest Build</a></h2>
+            <p>Brass requires the .NET 2 runtimes to be installed. </p>
+        <h2><a href="manual.htm">View Manual</a></h2>
+            <p>Read the latest Brass manual.</p>
+            
+        <div class="apology">
+        <h3>Apology</h3>
+        <p>I badmouth TASM quite a lot. I have used it a lot in the past, but it has annoyed me too many times. I did not wish to make a TASM-compatible assembler, but other people seem to like it, and developers hate change. I will say one thing for it, though:</p>
+        <p><b>TASM is 2x-6x <i>faster</i> than Brass.</b></p>
+        <p>There. I said it. For those of you with a 286, grab TASM.</p>
+        <p><small>TASM's manuals don't have such a revolting colour scheme, either.</small></p>
+        </div>
+        <p>Bear in mind that Brass is not intended to be a straight replacement for TASM, but to placate developers I have added the core TASM-style directives to maintain compatibility with old TASM-based source code.</p>
+            
+        </td><td width="50%">
+        <h2>Version Information</h2>
+            <h3>1.0.0.6</h3>
+                <p><b>Features</b></p>
+                    <p>New boolean logic operators for expressions: <tt>&amp;&amp;</tt>, <tt>||</tt>, <tt>!</tt> and the extremely useful ternary operator <tt>?:</tt>.</p>
+                    <p>Included binary files (<tt>.incbin</tt>) can now have start and end indices to specify which bytes to include, and can have a expression applied to each byte as it is loaded.</p>
+                <hr />
+            <h3>1.0.0.5</h3>
+                <p><b>Features</b></p>
+                    <p>Integrated RLE compression of files loaded through <tt>.incbin</tt> if specified in a flag.</p>
+                    <p>More output formats: Intel hex format, Intel hex word address format, MOS Technology hex format and Motorola hex format.</p>
+                    <p>Sensible list file format, unlike the output from the <tt>-d</tt> switch.</p>
+                <p><tt>RST</tt> no longer uses hard-coded tables, so allows you to use expressions in <tt>RST</tt> instructions (such as <tt>RST rMOV9TOOP1</tt>).</p>
+                    <p>Output listing files using the <tt>-l &lt;filename&gt;</tt> switch.</p>
+                    <p>Load external table files using the <tt>-t &lt;filename&gt;</tt> switch.</p>
+                <hr />
+            <h3>1.0.0.4</h3>
+                <p><b>Features</b></p>
+                    <p><a href="manual.htm#data"><tt>.dbsin</tt> and <tt>.dbcos</tt></a> (plus word variations) to generate trigonometric tables.</p>
+                     <p><b>Other</b></p>
+                    <p>Warning on using ambiguous or confusing labels (eg <tt class="code">kX-1</tt> having the subtraction operator in the middle of it).</p>
+                <hr />
+            <h3>1.0.0.3</h3>
+                <p><b>Bugfixes</b></p>
+                    <p>Working binary output for TI85.</p>
+                    <p>String unescape mechanism fixed with basic error check for 0-length strings when escaping double-backslashes.</p>
+                <p><b>Features</b></p>
+                    <p><a href="manual.htm#dirlabels"><tt>.var</tt> and <tt>.varloc</tt></a> to help declaring labels to point to variables in safe RAM locations.</p>
+                    <p><a href="manual.htm#data"><tt>.asc</tt> and <tt>.asciimap</tt></a> to translate ASCII strings to whatever character encoding the Z80 devices uses.</p>
+                    <p>Ability to pass data into source files through <a href="manual.htm#environment">environment variables.</a></p>
+
+                <hr />
+            <h3>1.0.0.2</h3>
+                <p><b>Bugfixes</b></p>
+                    <p>Parser now safely splits lines up (could be thrown off if splitting argument lists up if the argument lists contained a character/string constant containing a comma - eg, <tt>.fill $10, ','</tt>).</p>
+                <p><b>Features</b></p>
+                    <p>Dummy port access instructions added (<tt>in (c)</tt>, <tt>in f,(c)</tt> and <tt>out (c),0</tt>). Jim e's <b>mode7</b> now assembles.</p>
+                    <p>XML error log export for Latenite.</p>
+                    <p>Optional strict error mode (stops assembling on the first major error).</p>
+                    <p><tt>.dbrnd</tt> and <tt>.dwrnd</tt> directives.</p>
+                    <p><u>Preliminary</u> support for binaries for the TI82 (working), TI73 (working), TI86 (needs you to specify <tt>.tivariabletype $12</tt> else it appears as a complex list), TI85 (totally buggered, doesn't work yet). As such, not mentioned in the manual. When I say <i>working</i>, I mean "I have checked in a hex editor", I do not own the calculators myself so cannot properly test.</p>
+                <p><b>Other</b></p>
+                    <p>Icon fixed for people using the 256-colour modes icon (no more white flecks around the edge).</p>
+                    <hr />
+            <h3>1.0.0.1</h3>
+                <p><b>Bugfixes</b></p>
+                    <p>Fixed typo; <tt>.binarymode</tt> was wrong, Brass expected <tt>.binarytype</tt>. Brass has been modified to accept <tt>.binarymode</tt> as that was what was in the documentation. <u>The real directive is now <tt>.binarymode</tt></u></p>
+                    <p>Bugfix on expression parser; double negatives (such as 10--32 or 10*-4) were not being handled correctly. To save my brain from melting (this is the first time I've written software to parse expressions), I added a new operator, <tt>¬</tt> to denote a negative number (eg <tt>¬100</tt>). Double negatives are automatically converted (10--32 becomes <tt>10-¬32</tt>) internally, so hopefully this is an invisible fix. The only problem is if you use <tt>¬</tt> as a label name. As a side-effect, the <u>Al 3D Engine demo now assembles correctly, as does anything using Durk's GPP.</u></p>
+                    <p>Label names no longer butchered in multiple-instruction lines.</p>
+                    <p>Character constants that contain the symbol of an operator (eg <tt>'+'</tt> or <tt>'~'</tt>) are no longer treated as expressions (eg <tt>'&amp;'</tt> used to be treated as <tt>'</tt> AND-ed with <tt>'</tt>, causing a parse error).</p>
+                    <p>Fixed other odd bug when defining a character constant as the first part of an instruction's argument - so <tt>ld a,'?'</tt> would work, but <tt>sub '?'</tt> would not. It had the side effect that comments weren't stripped correctly, so <tt>sub '?' ; Hmm</tt> would try to evaluate <tt>'?';Hmm</tt> as an expression.</p>
+                    <p><i>Check <a href="manual.htm#tested">manual</a> for latest compatibility list.</i></p>
+                <p><b>Features</b></p>
+                    <p><a href="manual.htm#reusable">Reusable labels.</a></p>
+                    <p>Warns you if you write to the same memory location in the output binary more than once. (<tt>.org 0 \ .db 0 \ .org 0 \ .db 0</tt>)</p>
+                    <hr />
+            <h3>1.0.0.0</h3>
+                <p>First public release.</p>
+        </td></tr></table>
+
+    </body>
+</html>

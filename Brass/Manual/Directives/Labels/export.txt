@@ -1,0 +1,15 @@
+.export
+.export label [, label [, label [, ...]]]
+This tells Brass to add a label name to the label export file.
+====
+.org $100
+start_of_code:
+    .dw $FAFF
+end_of_code:
+        
+.export start_of_code, end_of_code
+
+; This will produce the export file:
+; start_of_code   .equ    $0100
+; end_of_code     .equ    $0102
+====

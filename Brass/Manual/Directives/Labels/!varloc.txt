@@ -1,0 +1,25 @@
+.varloc
+.varloc location, [size]
+This directive is to used with the directive .var to create a bunch of labels which point to variables in areas of memory without you having to manually calculate the offsets in memory yourself. For example, you might currently use:
+====
+.define safe_ram $CED5
+me_x   .equ    safe_ram+0
+me_y   .equ    safe_ram+1
+me_dx  .equ    safe_ram+2   ; 2 bytes
+me_dy  .equ    safe_ram+4   ; 2 bytes
+me_s   .equ    safe_ram+6
+====
+...which is pretty rubbish to maintain. The easiest way is to use .var, like this:
+====
+.define safe_ram $CED5
+.varloc safe_ram, 128 ; We have 128 bytes of safe RAM here
+.var 1, me_x    ; $CED5
+.var 1, me_y    ; $CED6
+.var 2, me_dx   ; $CED7
+.var 2, me_dy   ; $CED9
+.var 1, me_s    ; $CEDB
+====
+The only reason to declare a size is as an extra precaution; if you overfill your current area of RAM, Brass will warn you for each new variable that it's going into uncharted territory. Specifying a size of 0 (or no size at all) will stop Brass from displaying the warnings.
+----
+You can redefine .varloc as many times as you wish - .var will just use the last defined variable table location. .varloc defaults to location 0.
+----

@@ -1,0 +1,6 @@
+.block
+.block size
+Advances the program counter by the specified size. This can be useful to allocate space, for example:
+====
+string_buffer: .block 256
+====

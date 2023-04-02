@@ -1,0 +1,17 @@
+.dbsin/.dbcos/.dwsin/.dwcos
+.dbsin angles_in_circle, amplitude_of_wave, start_angle, end_angle, angle_step, DC_offset
+Use this directive to define trigonometric tables.
+First of all, you need to define the number of angles in a complete circle (cycle of the wave). For example, there are 360° in a circle, so to create a table which uses our degrees scale, use 360. A more sensible value to use would be 256, so a complete sinusoidal wave would fit into 256 angles.
+Next you need to specify the amplitude of the wave. To use the range of a byte, 127 seems sensible, for example.
+The next 3 arguments are used to denote which angles to generate the table from as a range. For example, to output the angles 0-179 for a half wave (when using a 360° table), you would specify 0, 179, 1. You could, for example, skip every other angle by using 0, 179, 2, or run backwards with 179, 0, -1 (note ordering of arguments!)
+Last of all is the DC offset applied to your wave. 0 centres it around 0, a positive value shifts the wave up and a negative value shifts the wave down.
+It might be clearer to see some pseudo-code for the way the table is generated:
+====
+for angle is start_angle to end_angle step angle_step
+    output_value(DC_offset +
+        amplitude_of_wave *
+            sin((angle / angles_in_circle) * 2 * pi)
+    )
+next angle
+====
+The .dbsin and .dwsin directives generate a sine table, .dbcos and .dwcos generate a cosine table. Needless to say, the .db* versions output bytes, the .dw* versions output words.

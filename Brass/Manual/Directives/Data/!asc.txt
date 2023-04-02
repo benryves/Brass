@@ -1,0 +1,3 @@
+.asc
+.asc expression [, expression [, expression [, ...]]]
+This performs virtually the same operation as .db with the exception that each byte defined is modified using the current ASCII translation table (declared using .asciimap).

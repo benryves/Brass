@@ -1,0 +1,6 @@
+.include/#include
+.include filename
+Includes and assembles a file at the current location. You can nest .include statements as deep as you like, just make sure that you don't go into an infinite loop.
+----
+Double quotes are optional, but recommended.
+----
