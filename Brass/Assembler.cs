@@ -10,7 +10,7 @@ namespace Brass {
 
         public static Hashtable Labels;         // Stores label names -> address mapping.
         public static Hashtable Instructions;   // Stores instructions -> Instruction class mapping (eg 'LD').
-        public static Hashtable Macros;         // Stores macros.
+        //public static Hashtable Macros;       // Stores macros.
 
 
         public static ArrayList ExportTable;    // Stores the export table.
@@ -31,9 +31,13 @@ namespace Brass {
         public static Hashtable ConditionalHasBeenTrue; // Remembering if a conditional on this level has ever been true.
         public static Stack ConditionalStack;   // Stack of conditionals keeping track of true/false/FileNotFound
 
-        public static Macro LastMacro;          // What was the last macro (so #defcont can do some magic).
+        //public static Macro LastMacro;          // What was the last macro (so #defcont can do some magic).
+        public static Macro LastMacro;
+        public static MacroReplacement LastReplacement;
 
         public static Hashtable ReusableLabels; // This is pure magic ;)
+
+        public static Hashtable ForLoops;       // Hold for-loop label names->for-loop data
 
         public static byte[] ASCIITable;        // ASCII mapping table
 
@@ -43,8 +47,12 @@ namespace Brass {
         public static int VariableTableOff = 0;     // Offset in variable table
         public static int VariableTableSize = 0;    // Size of the variable table size
 
+        public static Stack LastForLoop;
+
         public static bool WriteListFile = false;
         public static ArrayList ListFile = new ArrayList();
+
+        public static Hashtable FileHandles;
 
         /// <summary>
         /// Adjust a label name, fixing for case and local label stuff.
@@ -53,6 +61,21 @@ namespace Brass {
         /// <returns>Fixed label name</returns>
         public static string FixLabelName(string Name) {
             Name = IsCaseSensitive ? Name.Trim() : Name.Trim().ToLower();
+
+
+            int ReplaceVariables = Name.IndexOf("{");
+            while (ReplaceVariables != -1) {
+                int EndOfVariable = Name.IndexOf("}");
+                if (EndOfVariable == -1 || (EndOfVariable - ReplaceVariables <= 1)) break;
+
+                string Before = Name.Remove(ReplaceVariables);
+                string After = Name.Substring(EndOfVariable + 1);
+
+                string ReplaceVariableName = Name.Substring(ReplaceVariables, EndOfVariable - ReplaceVariables).Substring(1);
+
+                Name = Before + TranslateArgument(ReplaceVariableName) + After;
+                ReplaceVariables = Name.IndexOf("{");
+            }
             if (Name.StartsWith(CurrentLocalLabel)) Name = CurrentModule + "." + Name;
             if (Name.Length == 0) {
                 throw new Exception("Nonexistant label name.");
@@ -76,7 +99,15 @@ namespace Brass {
                 this.File = File;
                 this.Data = Data;
             }
+        }
 
+        public class ForLoop {
+            //public int Value = 0;
+            public int Step = 0;
+            public int Start = 0;
+            public int End = 0;
+            public string Filename = "";
+            public int LineNumber = 0;
         }
 
 
@@ -122,18 +153,32 @@ namespace Brass {
         /// Reset the state of the assembler (needs doing at the start of each pass).
         /// </summary>
         public static void ResetStateOnPass() {
-            WriteListFile = false;
-            ConditionalStack = new Stack();
+            WriteListFile = true;
+            ConditionalStack = new Stack(128);
             ConditionalStack.Push(true);
-            ConditionalHasBeenTrue = new Hashtable();
+            ConditionalHasBeenTrue = new Hashtable(128);
             ConditionalHasBeenTrue[(int)0] = true;
+            ForLoops = new Hashtable(64);
             RLE_Flag = 0x91;
             RLE_ValueFirst = true;
-            Macros = new Hashtable();
+            LastReplacement = null;
+            LastMacro = null;
+            AvailableMacros = new Hashtable(512);
             CurrentLocalLabel = "_";
             CurrentModule = "noname";
             ProgramCounter = 0;
+            LastForLoop = new Stack(64);
+            CloseFileHandles();            
+        }
 
+        public static void CloseFileHandles() {
+            if (FileHandles != null) {
+                foreach (object V in FileHandles.Keys) {
+                    BinaryReader ToClose = (BinaryReader)FileHandles[V];
+                    ToClose.Close();
+                }
+            }
+            FileHandles = new Hashtable();
         }
 
         /// <summary>
@@ -142,20 +187,19 @@ namespace Brass {
         /// <param name="Filename">Filename to start from</param>
         /// <returns>True on success, false on errors</returns>
         public static bool AssembleFile(string Filename) {
-            ExportTable = new ArrayList();
-            Labels = new Hashtable();
-            SourceFiles = new Hashtable();
-            BinaryFiles = new Hashtable();
-            Macros = new Hashtable();
-            ReusableLabels = new Hashtable();
+            ExportTable = new ArrayList(512);
+            Labels = new Hashtable(32000);
+            SourceFiles = new Hashtable(64);
+            BinaryFiles = new Hashtable(64);
+            ReusableLabels = new Hashtable(32000);
             ResetStateOnPass();
             if (AssembleFile(Filename, Pass.Labels)) {
                 Console.WriteLine("Pass 1 complete.");
-                if (DebugMode) {
+                /*if (DebugMode) {
                     foreach (string K in Labels.Keys) {
                         Console.WriteLine(K + "\t" + ((int)Labels[K]).ToString("X4"));
                     }                  
-                }
+                }*/
 
                 ASCIITable = new byte[256];
                 for (int i = 0; i < 256; ++i) {
@@ -232,7 +276,7 @@ namespace Brass {
                     }
                     // Carry on
 
-                    string MacroLine = SafeStripWhitespace(RealSourceLine, true) + " ";
+                    /*string MacroLine = SafeStripWhitespace(RealSourceLine, true) + " ";
                     string CurrentToken = "";
                     string Preceding = "";
                     for (int i = 0; i < MacroLine.Length; ++i) {
@@ -250,7 +294,7 @@ namespace Brass {
                             
                             SourceLine += MacroLine.Substring(Start, EndOfLine - Start + 1);
 
-                        } else if (i == MacroLine.Length - 1 || "\t\\ +-*/,(){}|&^%;:?'\"=".IndexOf(MacroLine[i]) != -1) {
+                        } else if (i == MacroLine.Length - 1 || "\t\\ +-/*,(){}|&^%;:?'\"=".IndexOf(MacroLine[i]) != -1) {
                             Macro Check = (Macro)Macros[IsCaseSensitive ? CurrentToken : CurrentToken.ToLower()];
                             if (MacroLine[i] == '(' && Check != null) {
                                 CurrentToken += '(';
@@ -279,8 +323,18 @@ namespace Brass {
                         } else {
                             CurrentToken += MacroLine[i];
                         }
+                    }*/
+
+                    try {
+                        SourceLine = PreprocessMacros(RealSourceLine);
+                    } catch (Exception ex) {
+                        DisplayError(ErrorType.Error, "Internal preprocessor error: " + ex.Message, Filename, CurrentLineNumber);
+                        return false;
                     }
-                    if (DebugMode) Console.WriteLine("PRE:>{0} [->] {1}", ((string[])SourceFiles[ActualFilename])[CurrentLineNumber - 1], SourceLine);
+                    //if (DebugMode) Console.WriteLine("PRE:>{0} [->] {1}", ((string[])SourceFiles[ActualFilename])[CurrentLineNumber - 1], SourceLine);
+
+                    
+
                     ((string[])SourceFiles[ActualFilename])[CurrentLineNumber - 1] = SourceLine;
                 } else {
                     SourceLine = RealSourceLine;
@@ -288,8 +342,7 @@ namespace Brass {
                 #endregion
             // Now we get to do all sorts of assembling fun.
             CarryOnAssembling:
-
-                if (DebugMode) Console.WriteLine("ASM:>{0}", SourceLine);
+                //if (DebugMode) Console.WriteLine("ASM:>{0}", SourceLine);
 
                 if (SourceLine.StartsWith("\\")) SourceLine = SourceLine.Substring(1);
 
@@ -348,28 +401,28 @@ namespace Brass {
                                 DisplayError(ErrorType.Error, "Could not evaluate '" + RestOfLine + "' (" + ex.Message + ").", Filename, CurrentLineNumber);
                                 if (StrictMode) return false;
                             }
-                            if (DebugMode) Console.WriteLine("Instruction counter moved to " + ProgramCounter.ToString("X4"));
+                            //if (DebugMode) Console.WriteLine("Instruction counter moved to " + ProgramCounter.ToString("X4"));
                             break;
                             #endregion
                         case "#include":
                         case ".include":
                             #region Include
                             if (!(bool)ConditionalStack.Peek()) break;
-                            if (DebugMode) Console.WriteLine("Moving to " + RestOfLine);
+                            //if (DebugMode) Console.WriteLine("Moving to " + RestOfLine);
                             string NewFileName = RestOfLine.Replace("\"", "");
                             if (!AssembleFile(NewFileName, PassNumber)) {
                                 DisplayError(ErrorType.Error, "Error in file '" + NewFileName + "'", Filename, CurrentLineNumber);
                                 if (StrictMode) return false;
                             }
-                            if (DebugMode) Console.WriteLine("Done " + RestOfLine);
+                            //if (DebugMode) Console.WriteLine("Done " + RestOfLine);
                             break;
                             #endregion
                         case "#incbin":
                         case ".incbin":
                             #region Include (Binaries)
                             if (!(bool)ConditionalStack.Peek()) break;
-                            if (DebugMode) Console.WriteLine("Loading " + RestOfLine);
-                            
+                            //if (DebugMode) Console.WriteLine("Loading " + RestOfLine);
+
                             try {
                                 string[] BinaryArguments = SafeSplit(RestOfLine, ',');
 
@@ -378,7 +431,7 @@ namespace Brass {
 
                                 byte[] TranslationTable = new byte[256];
                                 for (int i = 0; i < 256; ++i) {
-                                    TranslationTable[i] = (byte)i;                                    
+                                    TranslationTable[i] = (byte)i;
                                 }
 
                                 string Rule = "";
@@ -484,7 +537,7 @@ namespace Brass {
                                         for (int i = 0; i < BinaryData.Length; i++) {
                                             WriteToBinary(BinaryData[i]);
                                         }
-                                        
+
                                         break;
                                     default:
                                         break;
@@ -548,7 +601,7 @@ namespace Brass {
 
                                             if (PassNumber == Pass.Assembling && WriteListFile) DefinedData.Add(Command == ".asc" ? ASCIITable[DataValue & 0xFF] : (byte)(DataValue & 0xFF));
                                             WriteToBinary(Command == ".asc" ? ASCIITable[DataValue & 0xFF] : (byte)(DataValue & 0xFF));
-                                            
+
                                             if (DataSize == 2) {
                                                 DefinedData.Add((byte)(DataValue >> 8));
                                                 WriteToBinary((byte)(DataValue >> 8));
@@ -585,7 +638,7 @@ namespace Brass {
                                 } else {
                                     CurrentData += Data[DataPointer];
                                 }
-                                
+
                                 ++DataPointer;
                             }
                             if (WriteListFile && PassNumber == Pass.Assembling) {
@@ -649,7 +702,7 @@ namespace Brass {
                                 string[] Messages = SafeSplit(RestOfLine, ',');
                                 for (int i = 0; i < Messages.Length; ++i) {
                                     Messages[i] = Messages[i].Trim();
-                                    
+
                                 }
                                 foreach (string EchoMessage in Messages) {
                                     try {
@@ -755,7 +808,7 @@ namespace Brass {
                             if (!(bool)ConditionalStack.Peek()) break;
 
                             // TASM macro
-                            int ScanMacro = 0;
+                            /*int ScanMacro = 0;
                             string MacroName = "";
                             string MacroArgs = "";
                             bool AmReadingArgs = false;
@@ -790,17 +843,30 @@ namespace Brass {
                             LastMacro.Replacement = MacroSubstitution.Trim();
                             Macros[LastMacro.Name] = LastMacro;
                             if (!CheckLabelName(LastMacro.Name)) DisplayError(ErrorType.Warning, "Potentially confusing macro name '" + LastMacro.Name + "'.", Filename, CurrentLineNumber);
+                            break;*/
+
+                            //Console.WriteLine("++++++ {0}\t{1}\t{2}", Command, RestOfLine, SourceLine);
+
+                            try {
+                                AddMacroThroughDefinition(RestOfLine, Filename, CurrentLineNumber);
+                            } catch (Exception ex) {
+                                DisplayError(ErrorType.Error, ex.Message, Filename, CurrentLineNumber);
+                                if (StrictMode) return false;
+                            }
                             break;
                             #endregion
                         case ".defcont":
                         case "#defcont":
                             #region Continue macros
                             if (!(bool)ConditionalStack.Peek()) break;
-                            if (LastMacro == null) {
+                            if (LastReplacement == null) {
                                 DisplayError(ErrorType.Error, "No macro to continue from!");
                             } else {
-                                LastMacro.Replacement += RestOfLine;
-                                Macros[LastMacro.Name] = LastMacro;
+                                LastMacro.Replacements.Remove(LastReplacement);
+                                LastReplacement.ReplacementString += RestOfLine;
+                                LastMacro.Replacements.Add(LastReplacement);
+                                LastMacro.Replacements.Sort();
+                                AvailableMacros[LastMacro.Name] = LastMacro;
                             }
                             break;
                             #endregion
@@ -810,8 +876,8 @@ namespace Brass {
                         case "#ifndef":
                             #region Conditional defines
                             if ((bool)ConditionalStack.Peek() == true) {
-                                if (DebugMode) Console.WriteLine("Checking " + RestOfLine);
-                                bool CheckDefine = Macros[IsCaseSensitive ? RestOfLine : RestOfLine.ToLower()] != null;
+                                //if (DebugMode) Console.WriteLine("Checking " + RestOfLine);
+                                bool CheckDefine = AvailableMacros[IsCaseSensitive ? RestOfLine : RestOfLine.ToLower()] != null;
                                 ConditionalStack.Push((Command.IndexOf('n') == -1) ? CheckDefine : !CheckDefine);
                             } else {
                                 ConditionalStack.Push(false); // If the parent is FALSE, this too is FALSE.
@@ -829,7 +895,7 @@ namespace Brass {
                                 if (CheckConditions != null && (bool)CheckConditions == true) {
                                     ConditionalStack.Push(false);
                                 } else {
-                                    bool CheckDefine = Macros[IsCaseSensitive ? RestOfLine : RestOfLine.ToLower()] != null;
+                                    bool CheckDefine = AvailableMacros[IsCaseSensitive ? RestOfLine : RestOfLine.ToLower()] != null;
                                     ConditionalStack.Push((Command.IndexOf('n') == -1) ? CheckDefine : !CheckDefine);
                                 }
 
@@ -842,11 +908,11 @@ namespace Brass {
                         case "#if":
                             #region Conditionals
                             if ((bool)ConditionalStack.Peek() == true) {
-                                if (DebugMode) Console.WriteLine("Checking " + RestOfLine);
+                                //if (DebugMode) Console.WriteLine("Checking " + RestOfLine);
                                 int Result = 0;
                                 try {
                                     Result = TranslateArgument(RestOfLine);
-                                    if (DebugMode) Console.WriteLine(RestOfLine + "=" + Result);
+                                    //if (DebugMode) Console.WriteLine(RestOfLine + "=" + Result);
                                     ConditionalStack.Push(Result != 0);
                                 } catch (Exception ex) {
                                     DisplayError(ErrorType.Error, "Could not evaluate " + RestOfLine + " (" + ex.Message + ") - possible errors between pass 1 and 2.", Filename, CurrentLineNumber);
@@ -1020,7 +1086,7 @@ namespace Brass {
                                                 ProgramCounter - RandomData.Count,
                                                 Filename,
                                                 (byte[])RandomData.ToArray(typeof(byte))));
-         
+
                                     } catch (Exception ex) {
                                         DisplayError(ErrorType.Error, "Could not generate random data: '" + ex.Message + "'.", Filename, CurrentLineNumber);
                                         if (StrictMode) return false;
@@ -1216,7 +1282,7 @@ namespace Brass {
                                         ProgramCounter - TrigData.Count,
                                         Filename,
                                         (byte[])TrigData.ToArray(typeof(byte))));
-                            }                            
+                            }
                             break;
                             #endregion
                         case ".rlemode":
@@ -1235,10 +1301,234 @@ namespace Brass {
                                 } catch (Exception ex) {
                                     DisplayError(ErrorType.Warning, "Could not set new RLE ordering mode - " + ex.Message, Filename, CurrentLineNumber);
                                     break;
-                                }                                
+                                }
                             }
                             break;
                             #endregion
+                        case ".for":
+                            #region for-loop start
+                            if (!(bool)ConditionalStack.Peek()) break;
+                            string[] ForArgs = SafeSplit(RestOfLine, ',');
+                            int ForStart = 0;
+                            int ForEnd = 0;
+                            int ForStep = 1;
+                            if (ForArgs.Length < 3 || ForArgs.Length > 4) {
+                                DisplayError(ErrorType.Error, "For loops require 3 or 4 arguments: Variable, start, end, and (optionally) step.", Filename, CurrentLineNumber);
+                                if (StrictMode) return false;
+                                break;
+                            }
+                            string ForLabel;
+                            try {
+                                ForLabel = FixLabelName(ForArgs[0]);
+                            } catch (Exception ex) {
+                                DisplayError(ErrorType.Error, ex.Message, Filename, CurrentLineNumber);
+                                if (StrictMode) return false;
+                                break;
+                            }
+
+                            if (Labels[ForLabel] != null) {
+                                DisplayError(ErrorType.Error, "Label '" + ForLabel + "' already defined!", Filename, CurrentLineNumber);
+                                if (StrictMode) return false;
+                                break;
+                            }
+                            try {
+                                ForStart = TranslateArgument(ForArgs[1]);
+                            } catch (Exception ex) {
+                                DisplayError(ErrorType.Error, "Could not calculate for-loop start: " + ex.Message, Filename, CurrentLineNumber);
+                                if (StrictMode) return false;
+                                break;
+                            }
+                            try {
+                                ForEnd = TranslateArgument(ForArgs[2]);
+                            } catch (Exception ex) {
+                                DisplayError(ErrorType.Error, "Could not calculate for-loop end: " + ex.Message, Filename, CurrentLineNumber);
+                                if (StrictMode) return false;
+                                break;
+                            }
+                            try {
+                                if (ForArgs.Length == 4) {
+                                    ForStep = TranslateArgument(ForArgs[3]);
+                                }
+                            } catch (Exception ex) {
+                                DisplayError(ErrorType.Error, "Could not calculate for-loop step: " + ex.Message, Filename, CurrentLineNumber);
+                                if (StrictMode) return false;
+                                break;
+                            }
+                            if (ForStep == 0 || ForStep > 0 && ForStart > ForEnd || ForStep < 0 && ForStart < ForEnd) {
+                                DisplayError(ErrorType.Error, "Infinite loop.", Filename, CurrentLineNumber);
+                                if (StrictMode) return false;
+                                break;
+                            }
+
+                            // We've got this far, so we can assume it's a safe to loop
+                            AddNewLabel(ForLabel, ForStart, false, Filename, CurrentLineNumber);
+                            ForLoop NewForLoop = new ForLoop();
+                            //NewForLoop.Value = ForStart;
+                            NewForLoop.Start = ForStart;
+                            NewForLoop.End = ForEnd;
+                            NewForLoop.Step = ForStep;
+                            NewForLoop.Filename = Filename;
+                            NewForLoop.LineNumber = CurrentLineNumber;
+                            ForLoops[ForLabel] = NewForLoop;
+                            LastForLoop.Push(ForLabel);
+                            #endregion
+                            break;
+                        case ".loop":
+                            #region for-loop looping
+                            if (!(bool)ConditionalStack.Peek()) break;
+                            string LoopLabel;
+                            try {
+                                LoopLabel = (string)LastForLoop.Peek();
+                            } catch (Exception ex) {
+                                DisplayError(ErrorType.Error, ex.Message, Filename, CurrentLineNumber);
+                                if (StrictMode) return false;
+                                break;
+                            }
+                            object LoopBack = ForLoops[LoopLabel];
+                            if (LoopBack == null) {
+                                // Eh?
+                                DisplayError(ErrorType.Error, "For-loop label '" + LoopLabel + "' not found.", Filename, CurrentLineNumber);
+                                if (StrictMode) return false;
+                                break;
+                            } else {
+                                // We have found the loop.
+                                ForLoop FL = (ForLoop)LoopBack;
+                                if (FL.Filename.ToLower() != Filename.ToLower()) {
+                                    DisplayError(ErrorType.Error, "You cannot loop from a different file to the one in which the for-loop was defined.", Filename, CurrentLineNumber);
+                                    if (StrictMode) return false;
+                                    break;
+                                }
+                                int ForLoopValue = (int)Labels[LoopLabel];
+                                if ((FL.End < FL.Start && (ForLoopValue <= FL.End || ForLoopValue + FL.Step < FL.End))
+                                 || (FL.End > FL.Start && (ForLoopValue >= FL.End || ForLoopValue + FL.Step > FL.End))) {
+                                    // End
+                                    // Clear up the variables
+                                    Labels.Remove(LoopLabel);
+                                    ForLoops.Remove(LoopLabel);
+                                    LastForLoop.Pop();
+                                } else {
+                                    // Carry on
+                                    CurrentLineNumber = FL.LineNumber;
+                                    ForLoopValue += FL.Step;
+                                    Labels[LoopLabel] = ForLoopValue;
+                                }
+                            }
+                            #endregion
+                            break;
+                        case ".fopen":
+                            #region File open
+                            if (!(bool)ConditionalStack.Peek()) break;
+                            string[] FileOpenArgs = SafeSplit(RestOfLine, ',');
+                            if (FileOpenArgs.Length != 2) {
+                                DisplayError(ErrorType.Error, ".fopen expects two arguments.", Filename, CurrentLineNumber);
+                                if (StrictMode) return false; break;
+                            }
+                            string HandleName = FileOpenArgs[0].Trim();
+                            HandleName = IsCaseSensitive ? HandleName : HandleName.ToLower();
+                            if (FileHandles[HandleName] != null) {
+                                DisplayError(ErrorType.Error, "File handle '" + HandleName + "' already opened.", Filename, CurrentLineNumber);
+                                if (StrictMode) return false; break;
+                            }
+                            FileStream F;
+                            try {
+                                string ToOpen = FileOpenArgs[1].Trim().Replace("\"","");
+                                F = new FileStream(ToOpen, FileMode.Open);
+                            } catch (Exception ex) {
+                                DisplayError(ErrorType.Error, ex.Message, Filename, CurrentLineNumber);
+                                if (StrictMode) return false; break;
+                            }
+                            FileHandles[HandleName] = new BinaryReader(F);
+                            #endregion
+                            break;
+                        case ".fread":
+                        case ".freadw":
+                        case ".fpeek":
+                        case ".fpeekw":
+                        case ".fsize":
+                        case ".fpos":
+                        case ".fseek":
+                            #region File read
+                            if (!(bool)ConditionalStack.Peek()) break;
+
+                            string[] FileReadArgs = SafeSplit(RestOfLine, ',');
+                            if (FileReadArgs.Length != 2) {
+                                DisplayError(ErrorType.Error, Command + " expects two arguments.", Filename, CurrentLineNumber);
+                                if (StrictMode) return false; break;
+                            }
+
+                            string ReadLabelName = "";
+                            int SeekPos = 0;
+                            try {
+                                if (Command != ".fseek") {
+                                    ReadLabelName = FixLabelName(FileReadArgs[1]);
+                                } else {
+                                    SeekPos = TranslateArgument(FileReadArgs[1]);
+                                }
+                            } catch (Exception ex) {
+                                DisplayError(ErrorType.Error, ex.Message, Filename, CurrentLineNumber);
+                                if (StrictMode) return false; break;
+                            }
+
+                            string ReadHandleName = IsCaseSensitive ? FileReadArgs[0] : FileReadArgs[0].ToLower();
+                            object FileReadReader = FileHandles[ReadHandleName];
+                            if (FileReadReader == null) {
+                                DisplayError(ErrorType.Error, "File handle '" + ReadHandleName + "' not found.", Filename, CurrentLineNumber);
+                                if (StrictMode) return false; break;
+                            } else {
+                                BinaryReader BR = (BinaryReader)FileReadReader;
+                                try {
+                                    switch (Command) {
+                                        case ".fread":
+                                            Labels[ReadLabelName] = (int)BR.ReadByte();
+                                            break;
+                                        case ".freadw":
+                                            Labels[ReadLabelName] = (int)BR.ReadInt16();
+                                            break;
+                                        case ".fpeek":
+                                            Labels[ReadLabelName] = (int)BR.ReadByte();
+                                            BR.BaseStream.Seek(-1, SeekOrigin.Current);
+                                            break;
+                                        case ".fpeekw":
+                                            Labels[ReadLabelName] = (int)BR.ReadInt16();
+                                            BR.BaseStream.Seek(-2, SeekOrigin.Current);
+                                            break;
+                                        case ".fsize":
+                                            Labels[ReadLabelName] = (int)BR.BaseStream.Length;
+                                            break;
+                                        case ".fpos":
+                                            Labels[ReadLabelName] = (int)BR.BaseStream.Position;
+                                            break;
+                                        case ".fseek":
+                                            BR.BaseStream.Seek(SeekPos, SeekOrigin.Begin);
+                                            break;
+
+                                    }
+                                } catch (Exception ex) {
+                                    DisplayError(ErrorType.Error, ex.Message, Filename, CurrentLineNumber);
+                                    if (StrictMode) return false;
+                                }
+                            }
+                            #endregion
+                            break;
+                        case ".fclose":
+                            #region File close
+                            if (!(bool)ConditionalStack.Peek()) break;
+                            string CloseHandleName = IsCaseSensitive ? RestOfLine.Trim() : RestOfLine.Trim().ToLower();
+                            object FileCloseReader = FileHandles[CloseHandleName];
+                            if (FileCloseReader == null) {
+                                DisplayError(ErrorType.Error, "File handle '" + CloseHandleName + "' not found.", Filename, CurrentLineNumber);
+                                if (StrictMode) return false; break;
+                            } else {
+                                BinaryReader BR = (BinaryReader)FileCloseReader;
+                                try {
+                                    BR.Close();
+                                } catch (Exception ex) {
+                                    DisplayError(ErrorType.Error, ex.Message, Filename, CurrentLineNumber);
+                                    if (StrictMode) return false;
+                                }
+                            }
+                            #endregion
+                            break;
                         default:
                             DisplayError(ErrorType.Error, "Unsupported directive '" + Command + "'.", Filename, CurrentLineNumber);
                             if (StrictMode) return false;
@@ -1265,7 +1555,6 @@ namespace Brass {
                             JustHitLabelName = SourceLine.Remove(EndOfLabel).Trim().Replace(":", "");
                             if (!IsCaseSensitive) JustHitLabelName = JustHitLabelName.ToLower();
                             if (PassNumber == Pass.Labels && !AddNewLabel(JustHitLabelName, ProgramCounter, false, Filename, CurrentLineNumber) && StrictMode) return false;
-
                             SourceLine = SourceLine.Substring(EndOfLabel);
                             goto CarryOnAssembling; // You love teh goto.
                         }
@@ -1280,6 +1569,10 @@ namespace Brass {
                             ++FindFirstChar;
                         }
                         Instr = Instr.ToLower();
+                        if (Instr == "\\") {
+                            SourceLine = SourceLine.Substring(FindFirstChar);
+                            goto CarryOnAssembling;
+                        }
                         if (Instructions[Instr] == null) {
                             DisplayError(ErrorType.Error, "Instruction '" + Instr + "' not understood.", Filename, CurrentLineNumber);
                             if (StrictMode) return false;
@@ -1326,7 +1619,7 @@ namespace Brass {
 
                                 if (PassNumber == Pass.Assembling) {
 
-                                    if (DebugMode) Console.WriteLine(ProgramCounter.ToString("X4") + ":" + ((int)(ProgramCounter - BinaryStartLocation)).ToString("X4") + "\t" + I.Name + "\t" + I.Arguments + "\t" + SafeStripWhitespace(Args));
+                                    //if (DebugMode) Console.WriteLine(ProgramCounter.ToString("X4") + ":" + ((int)(ProgramCounter - BinaryStartLocation)).ToString("X4") + "\t" + I.Name + "\t" + I.Arguments + "\t" + SafeStripWhitespace(Args));
 
                                     byte[] InstructionBytes = new byte[I.Size];
                                     for (int i = 0; i < I.Opcodes.Length; ++i) {
