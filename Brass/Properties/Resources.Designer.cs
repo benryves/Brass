@@ -61,29 +61,74 @@ namespace Brass.Properties {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to ADC  A,(HL)  8E   1 NOP 1
-        ///ADC  A,(IX*) 8EDD 3 ZIX 1
-        ///ADC  A,(IY*) 8EFD 3 ZIX 1
-        ///ADC  A,A     8F   1 NOP 1
-        ///ADC  A,B     88   1 NOP 1
-        ///ADC  A,C     89   1 NOP 1
-        ///ADC  A,D     8A   1 NOP 1
-        ///ADC  A,E     8B   1 NOP 1
-        ///ADC  A,H     8C   1 NOP 1
-        ///ADC  A,L     8D   1 NOP 1
-        ///ADC  A,IXH   8CDD 2 NOP 1
-        ///ADC  A,IXL   8DDD 2 NOP 1
-        ///ADC  A,IYH   8CFD 2 NOP 1
-        ///ADC  A,IYL   8DFD 2 NOP 1
-        ///ADC  A,*     CE   2 NOP 1
-        ///ADC  HL,BC   4AED 2 NOP 1
-        ///ADC  HL,DE   5AED 2 NOP 1
-        ///ADC  HL,HL   6AED 2 NOP 1
-        ///ADC  HL,SP   7AED 2 NOP 1        /// [rest of string was truncated]&quot;;.
+        ///   Looks up a localized string similar to &lt;!DOCTYPE html PUBLIC &quot;-//W3C//DTD HTML 4.01//EN&quot;&gt;
+        ///&lt;html&gt;
+        ///    &lt;head&gt;
+        ///        &lt;link rel=&quot;Stylesheet&quot; href=&quot;style.css&quot; /&gt;
+        ///        &lt;title&gt;Brass Z80 Assembler - Manual&lt;/title&gt;
+        ///    &lt;/head&gt;
+        ///    &lt;body id=&quot;manual&quot;&gt;
+        ///        &lt;div id=&quot;page&quot;&gt;
+        ///        &lt;div id=&quot;banner&quot;&gt;
+        ///            &lt;img src=&quot;pig.png&quot; width=&quot;48&quot; height=&quot;48&quot; title=&quot;Oink&quot; /&gt;
+        ///            &lt;h1&gt;Brass Manual&lt;/h1&gt;
+        ///        &lt;/div&gt;
+        ///        
+        ///        &lt;div id=&quot;menubar&quot;&gt;
+        ///            &lt;ul id=&quot;nav&quot;&gt;
+        ///                &lt;li&gt;&lt;a href=&quot;#&quot;&gt;Getting Started&lt;/a&gt;
+        ///       [rest of string was truncated]&quot;;.
         /// </summary>
-        internal static string Z80 {
+        internal static string index {
             get {
-                return ResourceManager.GetString("Z80", resourceCulture);
+                return ResourceManager.GetString("index", resourceCulture);
+            }
+        }
+        
+        internal static System.Drawing.Bitmap pig {
+            get {
+                object obj = ResourceManager.GetObject("pig", resourceCulture);
+                return ((System.Drawing.Bitmap)(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to /* Main text properties */
+        ///
+        ///body, p, table, td, th, input, select, textarea, li {
+        ///  	font-family: tahoma, verdana, arial;
+        ///  	font-size: 11px;
+        ///  	color: #333333;
+        ///}
+        ///
+        ///body {
+        ///  	background-color: #DDDDDD;
+        ///}
+        ///
+        ///a {
+        ///  	text-decoration: none;
+        ///  	color: #000099;
+        ///}
+        ///a:hover {
+        ///  	text-decoration: underline;
+        ///  	color: #0000FF;
+        ///}
+        ///
+        ///h1 {
+        ///  	font-size: 22px;
+        ///}
+        ///h2 {
+        ///  	font-size: 18px;
+        ///}
+        ///h3 {
+        ///  	font-size: 14px;
+        ///}
+        ///h1, h2, h3, h4 {
+        ///  	font-family: trebuchet ms, verdana, tahoma, arial, sans-serif; [rest of string was truncated]&quot;;.
+        /// </summary>
+        internal static string style {
+            get {
+                return ResourceManager.GetString("style", resourceCulture);
             }
         }
     }

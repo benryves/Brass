@@ -5,7 +5,6 @@ using System.Text;
 namespace Brass {
     public partial class Program {
 
-
         public static bool AddInstructionLine(string PlainDataLine) {
 
             string DataLine = PlainDataLine.Replace('\t', ' ');
@@ -30,10 +29,14 @@ namespace Brass {
                 I.Arguments = Args.ToLower();
 
                 try {
-                    int Length = Opcodes.Length >> 1;
-                    I.Opcodes = new byte[Length];
-                    for (int i = 0; i < Length; ++i) {
-                        I.Opcodes[Length - i - 1] = Convert.ToByte(Opcodes.Substring(i * 2, 2), 16);
+                    if (Opcodes == "\"\"") {
+                        I.Opcodes = new byte[0];
+                    } else {
+                        int Length = Opcodes.Length >> 1;
+                        I.Opcodes = new byte[Length];
+                        for (int i = 0; i < Length; ++i) {
+                            I.Opcodes[Length - i - 1] = Convert.ToByte(Opcodes.Substring(i * 2, 2), 16);
+                        }
                     }
 
                     I.Size = Convert.ToInt32(Bytes, 16);
@@ -58,11 +61,11 @@ namespace Brass {
                             break;
                         case "crel":
                             I.Rule = Instruction.InstructionRule.CRel;
-                            break;
+                            break;*/
                         case "swap":
                             I.Rule = Instruction.InstructionRule.Swap;
                             break;
-                        case "combine":
+                        /*case "combine":
                             I.Rule = Instruction.InstructionRule.Combine;
                             break;
                         case "cswap":
@@ -132,7 +135,6 @@ namespace Brass {
                     I.Class = Convert.ToInt32(Class, 16);
                     I.Shift = Convert.ToInt32(Shift, 16);
                     I.Or = Convert.ToInt32(Or, 16);
-
                     AllInstructions.Add(I);
 
                 } catch (Exception) {
@@ -140,6 +142,7 @@ namespace Brass {
                     return false;
                 }
             }
+            
             return true;
 
         }
@@ -171,7 +174,7 @@ namespace Brass {
             public int Or = 0;
 
             public Instruction() { }
-            public Instruction(string name, string arguments, byte[] opcodes, InstructionRule rule, int iclass, int shift, int or) {
+            public Instruction(string name, string arguments, int size, byte[] opcodes, InstructionRule rule, int iclass, int shift, int or) {
                 Name = name;
                 Arguments = arguments;
                 Opcodes = opcodes;
@@ -179,6 +182,7 @@ namespace Brass {
                 Class = iclass;
                 Shift = shift;
                 Or = or;
+                Size = size;
             }
 
         }

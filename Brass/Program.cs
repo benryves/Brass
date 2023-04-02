@@ -9,22 +9,20 @@ namespace Brass {
     public partial class Program {
 
 
-
-
         public static StringDictionary EnvironmentVariables;
 
         public static int OutputFilenameCount = 0;
 
         public static bool StrictMode = false;
 
-        
+        public static bool DelayAtEnd = false;
+
+        public static bool GivenFilename = false;
 
         static int Main(string[] args) {
-
-
             string Title = "Brass Z80 Assembler " +
                 Assembly.GetExecutingAssembly().GetName().Version.ToString() +
-                " - Ben Ryves 2005";
+                " - Ben Ryves 2005-2006";
             Console.WriteLine(Title);
             Console.WriteLine("".PadRight(Title.Length, '-'));
 
@@ -32,12 +30,26 @@ namespace Brass {
                 EnvironmentVariables = P.StartInfo.EnvironmentVariables;
             }
 
-            ErrorLog = new ArrayList();
 
-            if (args.Length == 0) {
-                DisplayError(ErrorType.Error, "No command-line arguments specified!");
-                return 1;
-            }
+            /*if (args.Length == 0) {
+                Console.WriteLine("No command-line arguments specified... installing the manual instead!");
+                if (!Directory.Exists("Manual")) {
+                    try {
+                        Directory.CreateDirectory("Manual");
+                    } catch { return 1; }
+                }
+                try {
+                    using (TextWriter T = new StreamWriter("Manual/index.htm")) { T.Write(Brass.Properties.Resources.index); }
+                    using (TextWriter T = new StreamWriter("Manual/style.css")) { T.Write(Brass.Properties.Resources.style); }
+                    Brass.Properties.Resources.pig.Save("Manual/pig.png");
+                    System.Diagnostics.Process P = new System.Diagnostics.Process();
+                    P.StartInfo.FileName = "Manual/index.htm";
+                    P.Start();
+                } catch { }
+                return 0;
+            }*/
+            
+            ErrorLog = new ArrayList();
 
             string SourceFile = "";
             string BinaryFile = "";
@@ -45,6 +57,7 @@ namespace Brass {
             string ErrLogFile = "";
             string OutLstFile = "";
             string TTableFile = "";
+            string DbgLogFile = "";
 
             bool WaitingForListFile = false;
             bool WaitingForTableFile = false;
@@ -57,14 +70,18 @@ namespace Brass {
                         case 's':
                             IsCaseSensitive = true;
                             break;
-                        case 'd':
-                            DebugMode = true;
-                            break;
                         case 'x':
                             if (EnvironmentVariables["error_log"] == null) {
                                 DisplayError(ErrorType.Warning, "Environment variable ERROR_LOG not set.");
                             } else {
                                 ErrLogFile = EnvironmentVariables["error_log"];
+                            }
+                            break;
+                        case 'd':
+                            if (EnvironmentVariables["debug_log"] == null) {
+                                DisplayError(ErrorType.Warning, "Environment variable DEBUG_LOG not set.");
+                            } else {
+                                DbgLogFile = EnvironmentVariables["debug_log"];
                             }
                             break;
                         case 'o':
@@ -78,6 +95,9 @@ namespace Brass {
                             break;
                         case 't':
                             WaitingForTableFile = true;
+                            break;
+                        case 'p':
+                            DelayAtEnd = true;
                             break;
                         default:
                             DisplayError(ErrorType.Warning, Argument + " is not a valid command-line switch.");
@@ -98,8 +118,11 @@ namespace Brass {
                                 ExportFile = Path.GetFileNameWithoutExtension(SourceFile) + "_labels.inc";
                                 break;
                             case 1:
+                                GivenFilename = true;
                                 BinaryFile = Argument.Replace("\"", "");
-                                ExportFile = Path.GetFileNameWithoutExtension(BinaryFile) + "_labels.inc";
+                                try {
+                                    ExportFile = Path.GetFileNameWithoutExtension(BinaryFile) + "_labels.inc";
+                                } catch { }
                                 break;
                             case 2:
                                 ExportFile = Argument.Replace("\"", "");
@@ -119,15 +142,13 @@ namespace Brass {
                 return 1;
             }
 
+            VariableName = Path.GetFileNameWithoutExtension(SourceFile).ToUpper();
+
             // Parse the instruction list
             AllInstructions = new ArrayList();
 
             if (TTableFile == "") {
-
-                string[] TableLines = Properties.Resources.Z80.Split('\n');
-                foreach (string S in TableLines) {
-                    AddInstructionLine(S.Trim());
-                }
+                GenerateDefaultTable();
             } else {
                 try {
                     using (TextReader T = new StreamReader(TTableFile)) {
@@ -146,7 +167,6 @@ namespace Brass {
                     throw;
                 }
             }
-            
 
             RehashInstructionTable();
 
@@ -154,11 +174,31 @@ namespace Brass {
 
             Console.WriteLine("Assembling...");
             AssembleFile(SourceFile);
-
+            CloseFileHandles();
             
             bool Success = (TotalErrors == 0);
             if (Success) {
                 Console.WriteLine("Writing output file...");
+
+                if (!GivenFilename) {
+                    switch (BinaryType) {
+                        case Binary.Raw: BinaryFile = Path.GetFileNameWithoutExtension(BinaryFile) + ".bin"; break;
+                        case Binary.TI8X: BinaryFile = Path.GetFileNameWithoutExtension(BinaryFile) + ".8xp"; break;
+                        case Binary.TI83: BinaryFile = Path.GetFileNameWithoutExtension(BinaryFile) + ".83p"; break;
+                        case Binary.TI82: BinaryFile = Path.GetFileNameWithoutExtension(BinaryFile) + ".82p"; break;
+                        case Binary.TI86: BinaryFile = Path.GetFileNameWithoutExtension(BinaryFile) + ".86p"; break;
+                        case Binary.TI85: BinaryFile = Path.GetFileNameWithoutExtension(BinaryFile) + ".85p"; break;
+                        case Binary.TI73: BinaryFile = Path.GetFileNameWithoutExtension(BinaryFile) + ".73p"; break;
+                        case Binary.Intel: BinaryFile = Path.GetFileNameWithoutExtension(BinaryFile) + ".hex"; break;
+                        case Binary.IntelWord: BinaryFile = Path.GetFileNameWithoutExtension(BinaryFile) + ".hex"; break;
+                        case Binary.MOS: BinaryFile = Path.GetFileNameWithoutExtension(BinaryFile) + ".hex"; break;
+                        case Binary.Motorola: BinaryFile = Path.GetFileNameWithoutExtension(BinaryFile) + ".hex"; break;
+                        case Binary.SegaMS: BinaryFile = Path.GetFileNameWithoutExtension(BinaryFile) + ".sms"; break;
+                        case Binary.SegaGG: BinaryFile = Path.GetFileNameWithoutExtension(BinaryFile) + ".gg"; break;
+                    }
+                }
+
+
                 WriteBinary(BinaryFile);
             }
 
@@ -168,9 +208,9 @@ namespace Brass {
                     if (File.Exists(ExportFile)) File.Delete(ExportFile);
                     using (TextWriter T = new StreamWriter(ExportFile)) {
                         foreach (string Name in ExportTable) {
-                            object Label = Labels[IsCaseSensitive ? Name : Name.ToLower()];
+                            object Label = Labels[Name];
                             if (Label != null) {
-                                T.WriteLine(Name + "\t.equ\t$" + ((int)Label).ToString("X4"));
+                                T.WriteLine(Name + "\t.equ\t$" + ((LabelDetails)Label).Value.ToString("X4"));
                             } else {
                                 DisplayError(ErrorType.Error, "Could not locate label " + Name + " for export table.");
                             }
@@ -183,7 +223,7 @@ namespace Brass {
             }
 
             // Finally, quick overwrite check:
-            int TrackOverwrites = BinaryStartLocation;
+            /*int TrackOverwrites = BinaryStartLocation;
 
             if (HasBeenOutput != null) {
 
@@ -197,7 +237,7 @@ namespace Brass {
                     }
                     ++TrackOverwrites;
                 }
-            }
+            }*/
 
             Console.WriteLine("Errors: " + TotalErrors + ", Warnings: " + TotalWarnings + ".");
 
@@ -205,6 +245,7 @@ namespace Brass {
 
             if (ErrLogFile != "") {
                 CurrentMessageLine += "\n"; // Flush message
+                Console.WriteLine("Writing error log...");
                 try {
                     if (WriteCompleteXmlLog && File.Exists(ErrLogFile)) File.Delete(ErrLogFile);
                     using (TextWriter T = new StreamWriter(ErrLogFile, !WriteCompleteXmlLog)) {
@@ -238,19 +279,58 @@ namespace Brass {
                 }
             }
 
+            if (DbgLogFile != "") {
+                CurrentMessageLine += "\n"; // Flush message
+                Console.WriteLine("Writing debug log...");
+                try {
+                    if (WriteCompleteXmlLog && File.Exists(DbgLogFile)) File.Delete(DbgLogFile);
+                    using (TextWriter T = new StreamWriter(DbgLogFile, !WriteCompleteXmlLog)) {
+                        if (WriteCompleteXmlLog) T.WriteLine("<latenite version=\"2\">");
+
+                        T.Write("\t<debug binary=\"" + EscapeHTML(Path.GetFullPath(BinaryFile)) + "\" ");
+                        if (EnvironmentVariables["debug_debugger"] != null) T.Write("debugger=\"" + EscapeHTML(Path.GetFullPath(EnvironmentVariables["debug_debugger"].Replace("\"", ""))) + "\" ");
+                        if (EnvironmentVariables["debug_debugger_args"] != null) T.Write("debugger_args=\"" + EscapeHTML(EnvironmentVariables["debug_debugger_args"]) + "\" ");
+                        T.WriteLine("/>");
+
+                        Hashtable DebugFiles = new Hashtable();
+
+                        foreach (object LabelName in Labels.Keys) {
+                            LabelDetails LabelToAdd = (LabelDetails)Labels[LabelName];
+                            if (DebugFiles[LabelToAdd.File] == null) {
+                                DebugFiles[LabelToAdd.File] = new ArrayList();
+                            }
+                            ((ArrayList)DebugFiles[LabelToAdd.File]).Add(LabelToAdd);
+                        }
+
+                        foreach (object LabelFile in DebugFiles.Keys) {
+                            T.WriteLine("\t\t<source file=\"" + EscapeHTML(Path.GetFullPath(LabelFile.ToString())) + "\">");
+                            foreach (LabelDetails Label in ((ArrayList)DebugFiles[LabelFile])) {
+                                T.WriteLine("\t\t\t<label name=\"" + EscapeHTML(Label.Name) + "\" value=\"" + EscapeHTML(Label.Value.ToString()) + "\" line=\"" + EscapeHTML(Label.Line.ToString()) + "\" />");
+                            }
+                            T.WriteLine("\t\t</source>");
+                        }
+
+                        if (WriteCompleteXmlLog) T.WriteLine("</latenite>");
+                    }
+                } catch (Exception ex) {
+                    DisplayError(ErrorType.Error, "Could not write error log (" + ex.Message + ").");
+                }
+            }
+
             if (OutLstFile != "") {
                 Console.WriteLine("Writing list file...");
                 try {
                     using (TextWriter T = new StreamWriter(OutLstFile, false)) {
                         foreach (string Lbl in Labels.Keys) {
-                            T.WriteLine("{0}:{1}", ((int)(Labels[Lbl])).ToString("X4"), Lbl);
+                            T.WriteLine("{0}:{1}", ((LabelDetails)(Labels[Lbl])).Value.ToString("X4"), Lbl);
                         }
                         foreach (ListFileEntry L in ListFile) {
                             string AssembledData = "";
                             foreach (byte B in L.Data) {
                                 AssembledData += B.ToString("X2");
                             }
-                            T.WriteLine("{0}:{1}\t{2}:{3}\t{4}\t{5}", (L.Address - BinaryStartLocation).ToString("X4"), L.Address.ToString("X4"), Path.GetFileName(L.File), L.Line, AssembledData, L.Source);
+                            //TODO: Broken output (relative)
+                            T.WriteLine("{0}:{1}\t{2}:{3}\t{4}\t{5}", (L.Address - 0).ToString("X4"), L.Address.ToString("X4"), Path.GetFileName(L.File), L.Line, AssembledData, L.Source);
                         }
                     }
                 } catch (Exception ex) {
@@ -259,6 +339,8 @@ namespace Brass {
             }
 
             Console.WriteLine(Success ? "Done!" : "Build failed.");
+
+            if (DelayAtEnd) Console.ReadKey();
 
             return 0;
         }

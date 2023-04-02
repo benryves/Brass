@@ -1,109 +1,162 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN">
 <html>
     <head>
-        <style>
-        .code {
-            background: #DDEDFF;
-        }
-        p, li, td, th {
-            font-family: verdana, tahoma, helvetica;
-            font-size: 12px;
-        }
-        li {
-            margin-bottom: 5px;
-        }
-        pre {
-            margin-left: 10px;
-            padding: 8px;
-            margin-top: 5px;
-            margin-bottom: 5px;
-            border-width: 1px;
-            border-style: solid;
-            border-color: #333366;
-        }
-        pre, tt {
-            font-family: consolas, lucida console, courier new;
-            font-size: 12px;
-        }
-        table, td, th {
-            border-width: 1px;
-            border-style: solid;
-            border-color: #333366;
-            text-align: center;
-            border-collapse: collapse;
-            padding: 3px;
-            background: #EEFDFF;
-        }
-        th {
-            background: #333366;
-            color: white;
-        }
-        h1, h2, h3, h4 {
-            font-family: tahoma, helvetica;
-        }
-        .brass_specific {
-            color: #000066;
-            border-style: solid;
-            border-width: 1px;
-            border-color: #AAAACC;
-        }
-        .directive {
-            background: #EEFAFF;
-            padding: 10px;
-            border-style: solid;
-            border-width: 1px;
-            border-color: #CCECFF;
-        }
-        a {
-            color: black;
-        }
-        a:hover {
-            background: #CCCCCC;
-        }
-        .always, .brass_specific {
-            background: #EEDDFF;
-        }
-        </style>
+        <link rel="Stylesheet" href="style.css" />
         <title>Brass Z80 Assembler - Manual</title>
     </head>
-    <body>
-        <img src="pig.png" width="48" height="48" title="Oink" />
-        <h1>Brass Manual</h1>
+    <body id="manual">
+        <div id="page">
+        <div id="banner">
+            <img src="pig.png" width="48" height="48" title="Oink" />
+            <h1>Brass Manual</h1>
+        </div>
+        
+        <div id="menubar">
+            <ul id="nav">
+                <li><a href="#">Getting Started</a>
+                    <ul>
+                        <li><a href="#download">Download</a></li>
+                        <li><a href="#changes">Changes</a></li>                                            
+                        <li><a href="#command">Invocation</a></li>
+                        <li><a href="#tested">Tested&nbsp;with...</a></li>
+                        <li><a href="#differences">Known&nbsp;differences</a></li>
+                        <li><a href="#compilation">Compilation&nbsp;process</a></li>
+                    </ul>
+                </li>
+                <li><a href="#source">Source&nbsp;code&nbsp;syntax</a>
+                    <ul>
+                        <li><a href="#labels">Labels</a></li>
+                        <li><a href="#reusable">Reusable&nbsp;labels</a></li>
+                        <li><a href="#macros">Macros</a></li>
+                        <li><a href="#comments">Comments</a></li>
+                        <li><a href="#numeric">Numeric&nbsp;constants</a></li>
+                        <li><a href="#string">String&nbsp;constants</a></li>
+                        <li><a href="#expressions">Expressions</a></li>
+                        <li><a href="#case">Case sensitivity</a></li>
+                        <li><a href="#environment">Environment&nbsp;variables</a></li>
+                    </ul>
+                </li>
+                <li><a href="#directives">Assembler&nbsp;directives</a>
+                    <ul>
+                        <li><a href="#general">General&nbsp;directives</a></li>
+                        <li><a href="#dirlabels">Labels</a></li>
+                        <li><a href="#data">Data</a></li>
+                        <li><a href="#dirmacros">Macros</a></li>
+                        <li><a href="#output">Output</a></li>
+                        <li><a href="#conditionals">Conditionals</a></li>
+                        <li><a href="#flow">Assembler&nbsp;Flow&nbsp;Control</a></li>                    
+                        <li><a href="#files">Files</a></li>
+                        <li><a href="#paging">Paging</a></li>
+                    </ul>
+                </li>
+            </ul>
+        </div>
 
-        <h2>Table of Contents</h2>
+        <div id="content">
+        
+        <a name="download"></a>
+        <h2>Download</h2>
+        <p>Click <b><a href="http://benryves.com/bin/brass/Brass.exe">here</a></b> to download the latest Brass executable. Brass requires the .NET 2 Framework.</p>
+        <p>You can download the Latenite XML version of this manual <b><a href="http://benryves.com/bin/brass/brass.xml">here</a></b>.</p>
+        
+        <a name="changes"></a>
+        <h2>Changes</h2>
+        
+        <div id="changes">
+       	   <h3>1.0.1.2</h3>
+                <p><b>Features</b></p>
+                    <p>Sega Master System and Game Gear export through standard Sega ROM header and SDSC tag writing.</p>
+                    <p><tt class="code">.incbmp</tt> for quick-and-dirty bitmap inclusion.</p>      
+                    <p>Integrated manual - just double click the EXE without any command-line parameters.</p>                          
+                <p><b>Bugfixes</b></p>
+                    <p>Page-related directives shouldn't crash; still not heavily tested so be wary.</p>
+                    <hr />        
+       	   <h3>1.0.1.1</h3>
+                <p><b>Features</b></p>
+                    <p>Multiple page binary output through <tt class="code">.defpage</tt> and <tt class="code">.page</tt> directives.</p>
+                    <p>More binary output control through <tt class="code">.binaryrange</tt> and <tt class="code">.binaryfill</tt> directives.</p>
+                <p><b>Bugfixes</b></p>
+                    <p>Fixed ability to use escape sequences in character constants.</p>
+                    <p>Parentheses matching on assembly code fixed; <tt class="code">ld a,(1&2)^(3&4)</tt>, for example, now correctly identifies as <tt class="code">ld a,*</tt> rather than <tt class="code">ld a,(*)</tt></p>
+                    <hr />
+    	   <h3>1.0.0.9</h3>
+                <p><b>Bugfixes</b></p>
+                    <p>Order of precedence bug fixed; bit-shift operators <tt>&lt;&lt;</tt> and <tt>&gt;&gt;</tt> work again.</p>
+				<p><b>Features</b></p>
+                    <p><tt class="code">.for</tt> and <tt class="code">.loop</tt> directives.</p>
+                    <p>New label syntax; curly braces can be used to bung expressions into label names. For example, <tt>x=3 \_label_{x}:</tt> would create the label <tt>_label_3</tt>.</p>
+                    <p><a href="#files">File operations</a>.</p>
+                <hr />        
+    	   <h3>1.0.0.8</h3>
+                <p><b>Bugfixes</b></p>
+                    <p>Error in macro preprocessor where definitions without arguments (such as <tt>.define SOMETHING</tt>) followed with a comment would define a macro that erased itself resolved.</p>
+                <hr />
+            <h3>1.0.0.7</h3>
+                <p><b>Features</b></p>
+                    <p>Completely rewritten macro preprocessor - fractionally faster (still slower than TASM, though) and comes with the ability to define macros with multiple replacement strings - when a macro is called, the closest matching replacement string is picked. See the <a href="#dirmacros">manual</a> for more information, or look at the <a href="macro_demo.asm">example file</a> to see it in action.</p>
+                <p><b>Other</b></p>
+                    <p>Multiple macros no longer go haywire (macros are not applied to macro definitions themselves, as a side-effect of the new macro preprocessor).</p>
+                <hr />
+            <h3>1.0.0.6</h3>
+                <p><b>Features</b></p>
+                    <p>New boolean logic operators for expressions: <tt>&amp;&amp;</tt>, <tt>||</tt>, <tt>!</tt> and the extremely useful ternary operator <tt>?:</tt>.</p>
+                    <p>Included binary files (<tt>.incbin</tt>) can now have start and end indices to specify which bytes to include, and can have a expression applied to each byte as it is loaded.</p>
+                <hr />
+            <h3>1.0.0.5</h3>
+                <p><b>Features</b></p>
+                    <p>Integrated RLE compression of files loaded through <tt>.incbin</tt> if specified in a flag.</p>
+                    <p>More output formats: Intel hex format, Intel hex word address format, MOS Technology hex format and Motorola hex format.</p>
+                    <p>Sensible list file format, unlike the output from the <tt>-d</tt> switch.</p>
+                <p><tt>RST</tt> no longer uses hard-coded tables, so allows you to use expressions in <tt>RST</tt> instructions (such as <tt>RST rMOV9TOOP1</tt>).</p>
+                    <p>Output listing files using the <tt>-l &lt;filename&gt;</tt> switch.</p>
+                    <p>Load external table files using the <tt>-t &lt;filename&gt;</tt> switch.</p>
+                <hr />
+            <h3>1.0.0.4</h3>
+                <p><b>Features</b></p>
+                    <p><a href="#data"><tt>.dbsin</tt> and <tt>.dbcos</tt></a> (plus word variations) to generate trigonometric tables.</p>
+                     <p><b>Other</b></p>
+                    <p>Warning on using ambiguous or confusing labels (eg <tt class="code">kX-1</tt> having the subtraction operator in the middle of it).</p>
+                <hr />
+            <h3>1.0.0.3</h3>
+                <p><b>Bugfixes</b></p>
+                    <p>Working binary output for TI85.</p>
+                    <p>String unescape mechanism fixed with basic error check for 0-length strings when escaping double-backslashes.</p>
+                <p><b>Features</b></p>
+                    <p><a href="#dirlabels"><tt>.var</tt> and <tt>.varloc</tt></a> to help declaring labels to point to variables in safe RAM locations.</p>
+                    <p><a href="#data"><tt>.asc</tt> and <tt>.asciimap</tt></a> to translate ASCII strings to whatever character encoding the Z80 devices uses.</p>
+                    <p>Ability to pass data into source files through <a href="#environment">environment variables.</a></p>
 
-        <ul>
-            <li><a href="#command">Command-line invocation</a></li>
-            <li><a href="#tested">Tested with...</a></li>
-            <li><a href="#differences">Known differences between TASM and Brass</a></li>
-            <li><a href="#compilation">Compilation process</a></li>
-            <li><a href="#source">Source code syntax</a>
-                <ul>
-                    <li><a href="#labels">Labels</a>
-                    <ul><li><a href="#reusable">Reusable labels</a></li></ul>
-                    </li>
-                    <li><a href="#macros">Macros</a></li>
-                    <li><a href="#comments">Comments</a></li>
-                    <li><a href="#numeric">Numeric constants</a></li>
-                    <li><a href="#string">String constants</a></li>
-                    <li><a href="#expressions">Expressions</a></li>
-                    <li><a href="#case">Case sensitivity</a></li>
-                    <li><a href="#environment">Environment variables</a></li>
-                </ul>
-            </li>
-            <li><a href="#directives">Assembler directives</a>
-                <ul>
-                    <li><a href="#general">General directives</a></li>
-                    <li><a href="#dirlabels">Labels</a></li>
-                    <li><a href="#data">Data</a></li>
-                    <li><a href="#dirmacros">Macros</a></li>
-                    <li><a href="#output">Output</a></li>
-                    <li><a href="#conditionals">Conditionals</a></li>
-                </ul>
-            </li>
-
-        </ul>
-
-        <a name="command" />
+                <hr />
+            <h3>1.0.0.2</h3>
+                <p><b>Bugfixes</b></p>
+                    <p>Parser now safely splits lines up (could be thrown off if splitting argument lists up if the argument lists contained a character/string constant containing a comma - eg, <tt>.fill $10, ','</tt>).</p>
+                <p><b>Features</b></p>
+                    <p>Dummy port access instructions added (<tt>in (c)</tt>, <tt>in f,(c)</tt> and <tt>out (c),0</tt>). Jim e's <b>mode7</b> now assembles.</p>
+                    <p>XML error log export for Latenite.</p>
+                    <p>Optional strict error mode (stops assembling on the first major error).</p>
+                    <p><tt>.dbrnd</tt> and <tt>.dwrnd</tt> directives.</p>
+                    <p><u>Preliminary</u> support for binaries for the TI82 (working), TI73 (working), TI86 (needs you to specify <tt>.tivariabletype $12</tt> else it appears as a complex list), TI85 (totally buggered, doesn't work yet). As such, not mentioned in the manual. When I say <i>working</i>, I mean "I have checked in a hex editor", I do not own the calculators myself so cannot properly test.</p>
+                <p><b>Other</b></p>
+                    <p>Icon fixed for people using the 256-colour modes icon (no more white flecks around the edge).</p>
+                    <hr />
+            <h3>1.0.0.1</h3>
+                <p><b>Bugfixes</b></p>
+                    <p>Fixed typo; <tt>.binarymode</tt> was wrong, Brass expected <tt>.binarytype</tt>. Brass has been modified to accept <tt>.binarymode</tt> as that was what was in the documentation. <u>The real directive is now <tt>.binarymode</tt></u></p>
+                    <p>Bugfix on expression parser; double negatives (such as 10--32 or 10*-4) were not being handled correctly. To save my brain from melting (this is the first time I've written software to parse expressions), I added a new operator, <tt>¬</tt> to denote a negative number (eg <tt>¬100</tt>). Double negatives are automatically converted (10--32 becomes <tt>10-¬32</tt>) internally, so hopefully this is an invisible fix. The only problem is if you use <tt>¬</tt> as a label name. As a side-effect, the <u>Al 3D Engine demo now assembles correctly, as does anything using Durk's GPP.</u></p>
+                    <p>Label names no longer butchered in multiple-instruction lines.</p>
+                    <p>Character constants that contain the symbol of an operator (eg <tt>'+'</tt> or <tt>'~'</tt>) are no longer treated as expressions (eg <tt>'&amp;'</tt> used to be treated as <tt>'</tt> AND-ed with <tt>'</tt>, causing a parse error).</p>
+                    <p>Fixed other odd bug when defining a character constant as the first part of an instruction's argument - so <tt>ld a,'?'</tt> would work, but <tt>sub '?'</tt> would not. It had the side effect that comments weren't stripped correctly, so <tt>sub '?' ; Hmm</tt> would try to evaluate <tt>'?';Hmm</tt> as an expression.</p>
+                    <p><i>Check <a href="#tested">manual</a> for latest compatibility list.</i></p>
+                <p><b>Features</b></p>
+                    <p><a href="#reusable">Reusable labels.</a></p>
+                    <p>Warns you if you write to the same memory location in the output binary more than once. (<tt>.org 0 \ .db 0 \ .org 0 \ .db 0</tt>)</p>
+                    <hr />
+            <h3>1.0.0.0</h3>
+                <p>First public release.</p>        
+        </div>
+        
+        
+        <a name="command"></a>
         <h2>Command-Line Invocation</h2>
         <pre class="code">C:\&gt;Brass <i>source.ext [binary.ext [export.ext]] [-switch [-switch [-...]]]</i></pre>
         <p>Brass only needs one command-line argument - the filename of the source file you are assembling. You can optionally pass a filename for the binary to be output - it defaults to the filename of the source file with <tt>.bin</tt> on the end.</p>
@@ -111,7 +164,7 @@
         <p>Switches can be passed as a <tt class="code">-</tt> dash followed by a single character. The available switches are:</p>
         <table>
             <tr><th>Switch</th><th>Description</th></tr>
-            <tr><td><tt>d</tt></td><td>Debug mode - this is a way to verify/detect bugs in Brass.</td></tr>
+            <tr><td><tt>d</tt></td><td>Debug mode - write a debug log file for Latenite.</td></tr>
             <tr><td><tt>e</tt></td><td>Strict error mode.</td></tr>
             <tr><td><tt>l</tt></td><td>Write list file (followed by filename).</td></tr>
             <tr><td><tt>o</tt></td><td>Do not write headers on XML error log.</td></tr>
@@ -131,7 +184,7 @@
             <tr><td><tt>Brass file.asm -l hello.lst</tt></td><td>Assembles <tt>file.asm</tt> as <tt>file.bin</tt> and writes listing to <tt>hello.lst</tt>.</td></tr>
             <tr><td><tt>Brass -t tasm80.tab file.asm</tt></td><td>Assembles <tt>file.asm</tt> as <tt>file.bin</tt> using <tt>tasm80.tab</tt>.</td></tr>
         </table>
-        <a name="tested" />
+        <a name="tested"></a>
         <h2>Tested with:</h2>
         <p>Note that anything <span class="always">highlighed thusly</span> is in my <tt>test.cmd</tt> that I run after every modification to the source to check that I haven't broken anything (it reassembles them all in TASM and Brass, comparing the binaries to ensure they are identical).</p>
         <ul>
@@ -157,8 +210,8 @@
                 <li><b>Doom pour ti83</b> - I still suspect I crapped up something in the source code trying to fix it, but the crash is different at least. You can quit with On+Clear, before it was an all-out scrolly-screen crash. Not sure if that's an improvement or not, TASM still can't assemble it.</li>
             </ul>
         </ul>
-        <a name="differences" />
-        <h2>Major Known Differences Between TASM 3.2 and Brass</h2>
+        <a name="differences"></a>
+        <h2>Known Differences Between TASM 3.2 and Brass</h2>
         <ul>
         <li>From <b>Eliza:</b> TASM assembles <pre class="code">.db "IVE",0,"YOU'VE",0
 .db "YOUVE",0,"I'VE",0</pre>as<pre class="code">.db "IVE",0,"YOU'VE"
@@ -166,7 +219,7 @@
         <li>There <b>must</b> be at least one character of whitespace after label defintions. You cannot use <tt class="code">_label:ld a,$FF</tt>, for example.</li>
          </ul>
 
-        <a name="compilation" />
+        <a name="compilation"></a>
         <h2>Compilation Process</h2>
         <p>Brass is a two-pass assembler. In the first pass, each line of the source file is read and parsed. Any label definitions are added to the label list, macros are parsed and each line is translated by the macro preprocessor. No object code is produced until the <i>second</i> pass.</p>
         <p>Due to this mode of operation, there are some important things to watch out for:</p>
@@ -192,7 +245,7 @@ _label:
         <p>If the macros weren't cleared and regenerated, in the first pass <tt class="code">bad_macro</tt> would not have been defined and <tt class="code">_label</tt> would have had an address of <tt>$0002</tt>. In the second pass, <tt class="code">bad_macro</tt> <i>would</i> have been defined, and <tt class="code">_label</tt> would have had an address of <tt>$0001</tt>.</p>
         <p>The second pass does <i>not</i> perform any macro replacement, just redefinition.</p>
         
-        <a name="source" />
+        <a name="source"></a>
         <h2>Source Code Syntax</h2>
         <p>The assembler searches through each line to try and work out what it is dealing with. It works in this order:</p>
         <ol>
@@ -202,7 +255,7 @@ _label:
         </ol>
         <p>Lines can be split up using the <tt class="code">\</tt> backslash (for example, <tt class="code">_l: ld a, 1 \ call do_something</tt>). This functionality is provided solely for backwards compatibility with TASM, and it is strongly recommended that you only use it with the <tt class="code">#define</tt> directive.</p>
         <p>All label names, string constants, <tt>.db</tt> lists &amp;c are unlimited in length.</p>
-        <a name="labels" />
+        <a name="labels"></a>
         <h3>Labels</h3>
         <p>Labels can be used in expressions as an alternative to typing and manually calculating memory addresses. A label will, by default, be associated with the current value of the instruction pointer, but you can override this behaviour by using the <tt class="code">.equ</tt> directive.</p>
         <p>Labels that start with the current local label (which defaults to <tt class="code">_</tt> underscore) are only directly accessible by name within the current module. For example:</p>
@@ -226,7 +279,21 @@ _loop:
     djnz _loop
     ret</pre>
         <p>The <tt class="code">_loop</tt> labels are not confused because they are only declared in the local module's scope thanks to the leading underscore. They are, in fact, treated as <tt class="code">Renderer._loop</tt> and <tt class="code">AI._loop</tt> - so if I wanted to be very strange and jump into the rendering loop from my AI loop I could change the <tt>djnz</tt> instruction to <tt class="code">djnz Renderer._loop</tt>.</p>
-        <a name="reusable" />
+        <p>Prefixing a label name with a <tt class="code">:</tt> colon returns the label's page number rather than address. For example:</p>
+        <pre class="code">.page 0
+
+    ld hl,function  ; hl = $F001
+    ld a,:function  ; a = 4
+    ld b,#          ; b = 0 (current page number)
+    
+.page 4
+.org $F001
+function:
+    push ix
+    call _do_something
+    pop ix
+    ret</pre>
+        <a name="reusable"></a>
         <h4>Reusable Labels</h4>
         <p>There is one more special sort of label. These are known as <i>reusable labels.</i> It is pretty likely that you will often need a loop label, and even with modules calling them <tt class="code">_loop</tt> each time gets a bit painful.</p>
         <p>A reusable label is made up of a sequence of <tt class="code">+</tt> plus or <tt class="code">-</tt> minus symbols. To avoid ambiguity with the addition and subtraction operators, you must surround them in <tt>{</tt>curly braces<tt>}</tt>. When you use the label in an expression, the label that is matched is the closest one behind you (in the case of <tt class="code">-</tt>) or the closest one in front of you (in the case of <tt class="code">+</tt>). I guess this really needs an example:</p>
@@ -273,7 +340,14 @@ _loop:
     out (lcd_data), a
     ret</pre>
         <p>This code will call the routine at <tt>50</tt>, as it is the closest forwards label to the IP.</p>
-        <a name="macros" />
+        <h4>Variables in Label Names</h4>
+        <p>In some instances, you'll need to give labels names that include a value to keep them individual - for example, when defining a for-loop. Surround the expression in curly braces in the label name - for example:</p>
+        <pre class="code">num = 3
+
+_label_{num}:
+    jr _label_3     ; Jump to the label above
+    jr _label_{num} ; Same thing</pre>
+        <a name="macros"></a>
         <h3>Macros</h3>
         <p>In the first pass the line is replaced with a another version in which all predefined macros are swapped in. For example,</p>
         <pre class="code">#define safe_call(address) push af \ call address \ pop af
@@ -286,8 +360,7 @@ _label:
     xor a
     ret</pre>
     <p>...will be assembled as:</p>
-        <pre class="code">#define safe_call(address) push af \ call address \ pop af
-
+        <pre class="code">
     push af \ call _label \ pop af
 
     ; ...
@@ -295,11 +368,11 @@ _label:
 _label:
     xor a
     ret</pre>
-    <a name="comments" />
+    <a name="comments"></a>
     <h3>Comments</h3>
     <p>Comments are denoted with a <tt class="code">;</tt>, and run to the end of the line (as far as comments are concerned, the <tt class="code">\</tt> backslash does not count as the end of a line).</p>
 
-    <a name="numeric" />
+    <a name="numeric"></a>
     <h3>Numeric Constants</h3>
     <p>Numbers can be expressed in different 4 bases in Brass:</p>
     <table>
@@ -311,7 +384,7 @@ _label:
         <tr><td>Binary (2)</td><td><tt>%</tt></td><td><tt>b</tt></td><td><tt>%01010101</tt> or <tt>1111b</tt></td></tr>
     </table>
 
-    <a name="string" />
+    <a name="string"></a>
     <h3>String Constants</h3>
     <p>There are two types of constant;</p>
     <ul>
@@ -332,7 +405,7 @@ _label:
     </table>
     <p>Note that when using character constants you should not escape the double quote symbol and when using string quotes you should not escape the single quote symbol.</p>
 
-    <a name="expressions" />
+    <a name="expressions"></a>
     <h3>Expressions</h3>
     <p>Brass has a fairly stupid expression parser, and as to maintain backwards compatibility with TASM's even more stupid expression parser it is strongly recommended to leave no trace of ambiguity in your expressions and to wrap (parentheses) around <i>everything</i>. In example, TASM would calculate <tt>1+2*3+4*5</tt> as <tt>((((1+2)*3)+4)*5)</tt>, giving you 65. Brass, however, would calculate it as 27. Be <i>very</i> careful, and to make sure your expression is evaluated correctly type it in as <tt>1+(2*3)+(4*5)</tt>.</p>
     <p>Brass offers the following operators:</p>
@@ -365,33 +438,33 @@ _label:
         <tr><td><tt>&gt;</tt></td><td>Greater than</td><td><tt>35&gt;12</tt> &rarr; <tt>1</tt></td></tr>
         <tr><td><tt>&lt;=</tt></td><td>Less than or equal to</td><td><tt>32&lt;=(30+2)</tt> &rarr; <tt>1</tt></td></tr>
         <tr><td><tt>&gt;=</tt></td><td>Greater than or equal to</td><td><tt>'p'&gt;='q'</tt> &rarr; <tt>0</tt></td></tr>
-
         <tr><td><tt>?:</tt></td><td>Ternary</td><td><tt>0?(32+4):5</tt> &rarr; <tt>5</tt></td></tr>
+        <tr><td><tt>$</tt></td><td>Instruction pointer</td><td><tt>$</tt> &rarr; <tt>$9D93</tt></td></tr>
+        <tr><td><tt>#</tt></td><td>Current page</td><td><tt>#</tt> &rarr; <tt>0</tt></td></tr>
 
     </table>
-    <p>A further symbol, <tt class="code">$</tt>, can be used to represent the current instruction pointer. As an example of this, <tt class="code">.org $+5</tt> will move the instruction pointer forwards 5 bytes.</p>
     <p>Any boolean operators treat zero as false and any nonzero to be true.</p>
     <p>The ternary operator is a very useful one and can be used as an inline conditional. It takes this form:</p>
     <pre class="code">(boolean expression)?(returned if true):(returned if false)</pre>
     <p>If the expression returns true (nonzero) then the the value just after the <tt class="code">?</tt> is returned - if the expression returns false (zero) then the value after the <tt class="code">:</tt> is returned.</p>
 
-    <a name="case" />
+    <a name="case"></a>
     <h3>Case Sensitivity</h3>
     <p>Brass is, by default, case insensitive. This means that the label <tt class="code">CaseSensitive</tt> is the same as the label <tt class="code">casesensitive</tt>. For compatibility with some source code that takes advantage of a case insensitive assembler, you can switch Brass into a case insensitive mode. This <i>only</i> affects label/module names and macro definitions, though. Assembler directives are <i>always</i> case insensitive, as are Z80 instructions.</p>
-    <a name="environment" />
+    <a name="environment"></a>
     <h3>Enviroment Variables</h3>
     <p>The macro preprocessor also substitutes enviroment variables. This can be very useful in an IDE such as Latenite, which passes information to the build scripts in the form of environment variables.</p>
     <p>Include environment variables by surrounding them with <tt>'[%'</tt> and <tt>'%]'</tt>. For example:</p>
     <pre class="code">debug_lev   .equ    [%debug_level%]</pre>
     <p>You could set the variable <tt>debug_level</tt> on the command line by typing <tt class="code">SET debug_level=4</tt> (or whichever value you so wish). These are handled by the preprocessor, and work all over the place - inside string constants, as <tt class="code">#define</tt> arguments... wherever they are needed, really. If you wish to use a string, you can escape it by surrounding the environment variable name with <tt>$</tt>dollar signs<tt>$</tt>, like this:</p>
     <pre class="code">.echo "Your path variable is [%$PATH$%]\n"</pre>
-    <a name="directives" />
+    <a name="directives"></a>
     <h2>Assembler Directives</h2>
-    <p>Please note that any directives <span class="brass_specific">highlighted thusly</span> are <i>Brass specific</i> and will <u>not</u> work in TASM. Some TASM directives are ignored by Brass (such as the <tt>.nolist</tt> and <tt>.list</tt> directives - Brass doesn't generate any sort of listing file).</p>
+    <!--<p>Please note that any directives <span class="brass_specific">highlighted thusly</span> are <i>Brass specific</i> and will <u>not</u> work in TASM. Some TASM directives are ignored by Brass (such as the <tt>.nolist</tt> and <tt>.list</tt> directives - Brass doesn't generate any sort of listing file).</p>-->
     
 <!-- #### -->
 
-    <a name="general" />
+    <a name="general"></a>
     <h3>General Directives</h3>
     <div class="directive">
         <h3>.org</h3>
@@ -426,7 +499,7 @@ _end_of_routine:
         <p>Solely included for backwards compatibility with TASM, this allows you to manually add an instruction to the Z80 instruction set. The rest of the line should follow the format as demonstrated in the TASM table files. (See <tt>TASMTABS.HTM</tt> from TASM's zip file for more information).</p>
     </div>
 <!-- #### -->
-    <a name="dirlabels" />
+    <a name="dirlabels"></a>
     <h3>Labels</h3>
     <div class="directive">
         <h3>.locallabelchar</h3>
@@ -491,10 +564,9 @@ me_s   .equ    safe_ram+6</pre>
 .var 1, me_s    ; $CEDB</pre>
     <p>The only reason to declare a size is as an extra precaution; if you overfill your current area of RAM, Brass will warn you for each new variable that it's going into uncharted territory. Specifying a size of 0 (or no size at all) will stop Brass from displaying the warnings.</p>
     <p>Naturally, you can redefine <tt class="code">.varloc</tt> as many times as you wish - <tt class="code">.var</tt> will just use the last defined variable table location.<tt class="code">.varloc</tt> defaults to location 0.</p>
-
     </div>
 <!-- #### -->
-    <a name="data" />
+    <a name="data"></a>
     <h3>Data</h3>
     <div class="directive">
         <h3>.db (also .byte and .text) and .dw (also .word)</h3>
@@ -600,9 +672,18 @@ compressed = file_end - file_start
     )
 next angle</pre>
     <p>The <tt>.dbsin</tt> and <tt>.dwsin</tt> directives generate a sine table, <tt>.dbcos</tt> and <tt>.dwcos</tt> generate a cosine table. Needless to say, the <tt>.db*</tt> versions output bytes, the <tt>.dw*</tt> versions output words.</p>
+    
+    <!-- // -->
+        <h3 class="brass_specific">.incbmp</h3>
+        <pre class="code">.incbmp <i>filename [, threshold]</i></pre>
+        <p>This directive can be used to load a monochrome bitmap image (BMP, PNG, GIF, JPEG...) and include it directly into your program. The bitmap is padded with 0s to make it a multiple of 8 bits wide, and a 1 corresponds to a black pixel. Any pixel which is darker than the threshold (which defaults to 127) is considered black, any pixel brighter is considered white.</p>
+    
     </div>
+    
+    
+    
 <!-- #### -->
-    <a name="dirmacros" />
+    <a name="dirmacros"></a>
     <h3>Macros</h3>
     <div class="directive">
     <h3>.define (also #define)</h3>
@@ -613,7 +694,7 @@ next angle</pre>
     ; ...
     ld a, size_of_byte</pre>
     <p>When the macro preprocessor sees the line <tt class="code">ld a, size_of_byte</tt> it will get to work and replace it with <tt class="code">ld a, 8</tt>.
-    <p>It is important to realise that this is handled by the preprocessor - long before the actual code is even sent to the main assembler. As far as the actual assembler is concerned, that line never was never <tt class="code">ld a, size_of_byte</tt> - it was always <tt class="code">ld a, 8</tt>. The preprocessor only runs at the start of the first pass - this is why you cannot forward-reference macros. The reason for this is that one macro can affect another - yes, macro definitions are run through the preprocessor too.</p>
+    <p>It is important to realise that this is handled by the preprocessor - long before the actual code is even sent to the main assembler. As far as the actual assembler is concerned, that line never was never <tt class="code">ld a, size_of_byte</tt> - it was always <tt class="code">ld a, 8</tt>. The preprocessor only runs at the start of the first pass - this is why you cannot forward-reference macros. The reason for this is that one macro can affect another.</p>
     <p>To give the macros a little more power, it is possible to define a macro that takes some arguments. The arguments are a comma-delimited list of argument names, and any instance of them in the replacement section of the macro will be substituted by the value passed when the macro is called. For example:</p>
     <pre class="code">.define big_endian(value) .db value >> 8 \ .db value & $FF
     ; ...
@@ -632,7 +713,45 @@ open_file:
 read_file:
     ; This will not get called if open_file fails (returns non-zero).
     ret</pre>
-    <p>One special case macro is one where you don't give it any replacement, such as <tt class="code">.define FISHCAKES</tt>. In this case, the macro replaces itself with itself (so <tt>FISHCAKES</tt> becomes <tt>FISHCAKES</tt>), not nothing. However, a test to see if the macro exists through <tt class="code">.ifdef FISHCAKES</tt> will still be true.</p>
+    <p>One special case macro is one where you don't give it any replacement and no arguments, such as <tt class="code">.define FISHCAKES</tt>. In this case, the macro replaces itself with itself (so <tt>FISHCAKES</tt> becomes <tt>FISHCAKES</tt>), not nothing. However, a test to see if the macro exists through <tt class="code">.ifdef FISHCAKES</tt> will still be true.</p>
+    <p>Another difference between TASM and Brass is that Brass has a more advanced macro system. A single macro name (such as <tt class="code">call_on_success</tt> above) can have multiple replacements, and the correct one is identified by the replacement signature.</p>
+    <p>A replacement signature is the internal representation of the argument list in a macro. By default, each argument is treated as a wildcard, but by surrounding it with <tt class="code">{}</tt> curly braces you can force it to be a particular string, for example:</p>
+    <pre class="code">.define my_macro(label) call label                              ; Signature of *
+.define my_macro(label, variable) ld a,variable \ call label    ; Signature of *,*
+.define my_macro(label, {a}) call label                         ; Signature of *,a
+.define my_macro({0}, variable) call something \ ld a,variable  ; Signature of 0,*</pre>
+    <p>The advantage of this is that you can create multiple macros - one being a general case macro, the others being specific cases where you can apply optimisations. Here's an example - let's say you had a function called <tt class="code">sqr_root</tt> that you wanted to wrap in a macro for some reason. Here's the TASM approach:</p>
+    <pre class="code">#define sqrt(var) ld a,var\ call sqr_root
+
+    sqrt(43)    ; Generates ld a,43\ call sqr_root
+    sqrt(0)     ; Generates ld a,0\ call sqr_root (could be xor a!)
+    sqrt(a)     ; Generates ld a,a\ call sqr_root (oh dear)</pre>
+    <p>The Brass version would be:</p>
+    <pre class="code">.define sqrt(var) ld a,var\ call sqr_root
+.define sqrt({0}) xor a\ call sqr_root
+.define sqrt({a}) call sqr_root
+
+    sqrt(43)    ; Generates ld a,43\ call sqr_root
+    sqrt(0)     ; Generates xor a\ call sqr_root
+    sqrt(a)     ; Generates call sqr_root</pre>
+    <p>To make this sort of thing easier for yourself, it's a good idea to create a list of useful macros that handle the basic cases for you - for example, as a <tt class="code">ld a,*</tt> replacement:</p>
+    <pre class="code">.define ld_a(var) ld a,var
+.define ld_a({0}) xor a
+.define ld_a({a})
+; Now we have a sensible ld a,* macro replacement, use it to build the rest:
+.define sqrt(var) ld_a(var)\ call sqr_root
+.define cbrt(var) ld_a(var)\ call cube_root</pre>
+    <p>Another possible use of this is to be able to assign defaults to arguments (Ion's sprite routine springs to mind - how often do you use it to display a non-8x8 sprite?)</p>
+    <pre class="code">; Assume ld_a()/ld_b() macros defined as above.
+; _display is a function to display the number in 'a' in a number of bases:
+; 'b' specifies which base we want to print it in.
+
+.define display_in_base(var, base) ld_a(var)\ ld_b(var)\ call _display
+.define display_in_base(var)       ld_a(var)\ ld b,10\ call _display
+
+display_in_base(43,2)   ; Display 43 in base 2.
+display_in_base(65,16)  ; Display 65 in base 16.
+display_in_base(124)    ; Display 124 in base 10 (default).</pre>
     <!-- // -->
     <h3>.defcont (also #defcont)</h3>
     <pre class="code">.defcont <i>replacement</i></pre>
@@ -648,7 +767,7 @@ read_file:
     <p>If you want to confuse people, don't forget to stick other code between the <tt class="code">.define</tt> and the <tt class="code">.defcont</tt>. Or not...</p>
     </div>
 <!-- #### -->
-    <a name="output" />
+    <a name="output"></a>
     <h3>Output</h3>
     <div class="directive">
         <h3 class="brass_specific">.binarymode</h3>
@@ -667,7 +786,8 @@ read_file:
             <tr><td><tt>TI8X</tt></td><td>TI-83+ binary (*.8x?)</td></tr>
             <tr><td><tt>TI85</tt></td><td>TI-85 binary (*.85?)</td></tr>
             <tr><td><tt>TI86</tt></td><td>TI-86 binary (*.86?)</td></tr>
-
+            <tr><td><tt>SegaMS</tt></td><td>Sega Master System ROM (*.sms)</td></tr>
+            <tr><td><tt>SegaGG</tt></td><td>Sega Game Gear ROM (*.gg)</td></tr>            
         </table>
         <!-- // -->
         <h3 class="brass_specific">.variablename</h3>
@@ -677,9 +797,45 @@ read_file:
         <h3 class="brass_specific">.tivariabletype</h3>
         <pre class="code">.tivariabletype <i>type</i></pre>
         <p>Specify a variable type if outputting a TI binary. This defaults to an edit-locked program for the current platform (note that it's not always the same on all platforms - so $06 on a TI-83 or $12 on a TI-85).</p>
+        <!-- // -->
+        <h3 class="brass_specific">.binaryrange</h3>
+        <pre class="code">.binaryrange <i>start, end</i></pre>
+        <p>Force the output binary to span the declared range, rather than just between the lowest and highest memory addresses written to overall.</p>
+        <!-- // -->
+        <h3 class="brass_specific">.binaryfill</h3>
+        <pre class="code">.binaryfill <i>value</i></pre>
+        <p>Specifies the value used when a byte is left undefined in the output binary (defaults to $FF).</p>
+        <!-- // -->
+        <h3 class="brass_specific">.sdsctag</h3>
+        <pre class="code">.sdsctag <i>version, title, description, author</i></pre>
+        <p>Tells Brass to add an SDSC tag to the output binary (provided either Master System or Game Gear modes have been set using the <tt class="code">.binarymode</tt> directive). Version is expected to be in the form <tt>x.y</tt> (major and minor), the other three fields should either be string constants or pointers to strings. Brass will try to find free space in the ROM and create the strings/pointers for you if you specify a string constant. For this reason, you cannot assume that all free space will have the value of <tt class="code">.binaryfill</tt> when using this directive with string constants, as one of the SDSC tag strings might have been copied there.</p>
+        <pre class="code">.sdsctag 1.03, title, "SDSC tag demo", "Ben Ryves"
+        
+title:
+    .db "Demo", 0</pre>
+        <p>Tags must reside within the first $FFFF bytes of the ROM. Version numbers have a limit of 99 (99.99). Other values will be truncated.</p>
+        <!-- // -->
+        <h3 class="brass_specific">.segaregion</h3>
+        <pre class="code">.segaregion <i>region</i></pre>
+        <p>Specifies the region specified the ROM header. There are three different regions:</p>
+        <table>
+            <tr><th>Region</th><th>Description</th></tr>
+            <tr><td>Japan</td><td>Internal</td></tr>
+            <tr><td>Export</td><td>Anywhere that isn't Japan (default)</td></tr>
+            <tr><td>International</td><td>Only applicible to Game Gear (reverts to Export for SMS)</td></tr>
+        </table>
+        <!-- // -->
+        <h3 class="brass_specific">.segapart</h3>
+        <pre class="code">.segapart <i>number</i></pre>
+        <p>Specifies the 4-digit part number for the ROM header. Wholly unimportant.</p>
+        <!-- // -->
+        <h3 class="brass_specific">.segaversion</h3>
+        <pre class="code">.segaversion <i>version</i></pre>
+        <p>Like the SDSC tag, <i>version</i> is expected to be in <tt>x.y</tt> format, except that this time you are limited to as far as 9.9. Wholly unimportant.</p>
+        <!-- // -->
     </div>
 <!-- #### -->
-    <a name="conditionals" />
+    <a name="conditionals"></a>
     <h3>Conditionals</h3>
     <div class="directive">
         <!-- // -->
@@ -738,6 +894,157 @@ read_file:
 #endif</pre>
         
     </div>
+    
+<!-- #### -->
+    <a name="flow"></a>
+    <h3>Assembler Flow Control</h3>
+    <div class="directive">    
+         <!-- // -->
+		<h3 class="brass_specific">.for</h3>
+        <pre class="code">.for <i>label, start, end, [step]</i></pre>
+        <p>This directive is used to assemble a block of code multiple times. For example; unrolling loops or defining blocks of data programmatically.</p>
+        <p>A label is created and set to the value of <i>start</i>. The code is assembled between the <tt class="code">.for</tt> directive and the matching <tt class="code">.loop</tt>, and the value of the label is adjusted by <i>step</i> at the end of each loop. If it goes beyond the value of <i>end</i>, the label is freed and the assembler carries on.</p>
+      <!-- // -->
+		<h3 class="brass_specific">.loop</h3>
+        <pre class="code">.loop</pre>
+        <p>This directive terminates the last defined <tt class="code">.for</tt> loop.</p>
+        <pre class="code">.for i, 0, 7
+.db 1&lt;&lt;i
+.loop
+
+; This assembles as:
+.db %00000001
+.db %00000010
+.db %00000100
+.db %00001000
+.db %00010000
+.db %00100000
+.db %01000000
+.db %10000000</pre>
+	<p>Using Brass's conditionals, you can use it to assemble slightly different blocks of code on each loop. For example, a sprite routine that would need to do the same shifting operations but in one case AND the mask then OR the sprite data:</p><pre class="code">.for i, 1, 2
+    call _shift_sprite
+    
+_sprite_loop_{i}:   ; To ensure different label names each loop
+    ld a,(de)
+    
+    .if i == 1
+        and (hl)
+    .else
+        or (hl)
+    .endif
+    
+    ld (hl),a
+    inc hl
+    inc de
+    call _update_pointers
+    djnz _sprite_loop_{i}
+    
+.loop</pre>
+    <p>Naturally, for-loops can be nested.</p>
+    <pre class="code">.for y,0,7
+    .for x,0,7
+        .db x+y*2
+    .loop
+.loop</pre>
+    </div>
+    
+<!-- #### -->
+    <a name="files"></a>
+    <h3>File Operations</h3>
+    <div class="directive">
+        <!-- // -->
+        <h3 class="brass_specific">.fopen</h3>
+        <pre class="code">.fopen <i>handle, filename</i></pre>
+        <p>This opens the file specified by <i>filename</i> and creates a file handle which can be used to perform any of the below file operations with.</p>
+        <!-- // -->
+        <h3 class="brass_specific">.fclose</h3>
+        <pre class="code">.fclose <i>handle</i></pre>
+        <p>This closes the file handle <i>handle</i>. All open file handles are automatically closed for you on each pass.</p>
+        <!-- // -->
+        <h3 class="brass_specific">.fsize</h3>
+        <pre class="code">.fsize <i>handle, label</i></pre>
+        <p>This gets the size of the file <i>handle</i> and stores the result in the label <i>label</i>.</p>
+        <!-- // -->
+        <h3 class="brass_specific">.fread/.freadw</h3>
+        <pre class="code">.fread <i>handle, label</i></pre>
+        <p>This reads a byte (<tt class="code">.fread</tt>) or word (<tt class="code">.freadw</tt>) from the file <i>handle</i> and stores the result in the label <i>label</i>. The position of the pointer in the file stream is shunted along to point to the next byte/word.</p>
+        <pre class="code">; Open the file 'hello.txt' and include the data, stripping out the letter 'e':
+
+.fopen fhnd, "hello.txt"        ; fhnd is our handle
+.fsize fhnd, hello_size         ; hello_size = size of "hello.txt" in bytes
+
+.for i, 1, hello_size           ; Go through each byte...
+    .fread fhnd, chr            ; Read a byte and store it as "chr"
+    .if chr!='e' && chr!='E'    ; is it an "e"?
+        .db chr                 ; No, so output it.
+    .endif
+.loop
+
+.fclose fhnd                    ; Close our file handle.</pre>
+        <!-- // -->
+        <h3 class="brass_specific">.fpeek/.fpeekw</h3>
+        <pre class="code">.fpeek <i>handle, label</i></pre>
+        <p>This reads a byte (<tt class="code">.fpeek</tt>) or word (<tt class="code">.fpeekw</tt>) from the file <i>handle</i> and stores the result in the label <i>label</i>. The file pointer is <i>not</i> updated.</p>
+        <!-- // -->
+        <h3 class="brass_specific">.fpos</h3>
+        <pre class="code">.fpos <i>handle, label</i></pre>
+        <p>Returns the file pointer position in file <i>handle</i> and stores the result in <i>label</i>.</p>
+        <!-- // -->
+        <h3 class="brass_specific">.fseek</h3>
+        <pre class="code">.fseek <i>handle, address</i></pre>
+        <p>Sets the file pointer position in file <i>handle</i> to position <i>address</i> (in bytes).</p>
+        <pre class="code">; Open the file 'hello.txt' and include the data, reversing it.
+
+.fopen fhnd, "hello.txt"        ; fhnd is our handle
+.fsize fhnd, hello_size         ; hello_size = size of "hello.txt" in bytes
+
+.for i, hello_size - 1, 0, -1   ; Go through each byte, backwards.
+    .fseek fhnd, i
+    .fpeek fhnd, chr
+    .db chr
+.loop
+
+.fclose fhnd                    ; Close our file handle.</pre>
+
+    </div>
+<!-- #### -->
+    <a name="paging"></a>
+    <h3>Paging</h3>
+    <div class="directive">
+        <!-- // -->
+        <h3 class="brass_specific">.defpage</h3>
+        <pre class="code">.defpage <i>number, offset [, size [, origin]]</i></pre>
+        <p>This defines a binary page for the output. By default, the output is configured to be a single, 0-offsetted 64KB page (with a page number of 0), which is usually enough for simple programs/platforms. Breaking up your program into a series of pages is usually the way around the 64KB addressable memory limit of the Z80 CPU. How your device pages different areas of memory is entirely device specific, but these routines try to help you.</p>
+        <p>Let us suppose our mythical device uses 8KB pages. It has 16KB total memory; the first 8KB of memory is fixed as page 0; the last 8KB is swappable by writing the required page number to port $40. We could set up the paging like this:</p><pre class="code">.binaryrange $0000, $5FFF
+
+.defpage 0, $0000, $2000, $0000 ; $2000 is 8KB
+.defpage 1, $2000, $2000, $2000 ; Page #1 is  8KB into the output
+.defpage 2, $4000, $2000, $2000 ; Page #2 is 16KB into the output
+
+.page 0 ; This is page 0.
+
+; Swap in page #1:
+    ld a,1
+    out ($40),a
+    call $2000 ; C will now be 1.
+
+    ld a,2
+    out ($40),a
+    call $2000 ; C will now be 2.
+
+.page 1 ; Page 1...
+    ld c,1
+    ret
+
+.page 2 ; Page 2...
+    ld c,2
+    ret</pre><p>I'm sorry if this seems a little confusing, I'll try to explain it as best as I can.</p><p>For our imaginary device, there is only memory addresses $0000 up to $3FFF. The first $2000 bytes are <i>always</i> occupied by page 0. The $2000-$3FFF range will either be page 1 or page 2; regardless of which page is loaded in there, the range of addresses is $2000 to $3FFF. We cannot store binary files in this manner, sadly, which means that when we output the file we put page 2 after page 1. The addresses of page 2 are still calculated as if they were in the $2000-$3FFF range, even though the data is stored at $4000-$5FFF. We assume that the ROM burner or emulator will be able to work out how to arrange the file on the media correctly.</p>
+        <!-- // -->
+        <h3 class="brass_specific">.page</h3>
+        <pre class="code">.page <i>number</i></pre>
+        <p>Switch to assembling on a particular page.</p>
+        <!-- // -->
+      </div>
+      </div>
     </body>
 </html>
-

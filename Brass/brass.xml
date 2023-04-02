@@ -1,0 +1,927 @@
+<helpfile name="Brass Z80 Assembler">
+    <group name="General Directives">
+    <item
+        name="org"
+        highlight=".org"
+        colour="directive"
+        syntax=".org &lt;i&gt;address&lt;/i&gt;"
+        description="Forces the instruction pointer to a new location. Defaults to zero. The output binary is made up of all the bytes from the lowest address ever written to to the highest address ever written to, so watch out that you don't do anything before issuing the .org directive."
+    />
+    <item
+        name="include"
+        highlight=".include/#include"
+        colour="directive"
+        syntax=".include &lt;i&gt;filename&lt;/i&gt;"
+        description="Includes and assembles a file at the current location. You can nest .include statements as deep as you like, just make sure that you don't go into an infinite loop."
+    >
+        <note description="#include does the same thing as .include, and is provided for backwards compatibility with TASM." />
+        <note description="Double quotes are optional, but recommended." />
+    </item>
+    <item
+        name="echo"
+        highlight=".echo"
+        colour="directive"
+        syntax=".echo &lt;i&gt;expression&lt;/i&gt;"
+        description="This outputs a line of text or the result of an expression to the output console."
+    >
+        <example code="_routine:
+    ld (hl), a
+    inc hl
+    ret
+_end_of_routine:
+
+.echo &amp;quot;The routine _routine is &amp;quot;
+.echo _end_of_routine - _routine
+.echo &amp;quot; bytes in size.\n&amp;quot;" />
+    </item>
+    <item
+        name="end"
+        highlight=".end"
+        colour="directive"
+        syntax=".end"
+        description="Stops the current source file from assembling (the behaviour is slightly different to TASM in that it only stops the current file from assembling)."
+    />
+    <item
+        name="addinstr"
+        highlight=".addinstr"
+        colour="directive"
+        syntax=".addinstr &lt;i&gt;instruction args opcode size rule class [shift [or]]&lt;/i&gt;"
+        description="Solely included for backwards compatibility with TASM, this allows you to manually add an instruction to the Z80 instruction set. The rest of the line should follow the format as demonstrated in the TASM table files. (See TASMTABS.HTM from TASM's zip file for more information)."
+    />
+    </group>
+    <group name="Labels">
+        <item
+            name="locallabelchar"
+            highlight=".locallabelchar"
+            colour="directive"
+            syntax=".locallabelchar &lt;i&gt;character&lt;/i&gt;"
+            description="This redefines the current character used to denote a local label (defaults to _). You can make it any single character you like, but is strongly recommended you leave it as a standard, non-alphanumeric, non-operator symbol." />
+
+        <item
+            name="module"
+            highlight=".module"
+            colour="directive"
+            syntax=".module &lt;i&gt;name&lt;/i&gt;"
+            description="Tells the assembler which module you are currently in (to limit the scope of local labels). Defaults to noname, passing a blank name to .module will also reset it to noname." />
+
+        <item
+            name="using"
+            highlight=".using"
+            colour="directive"
+            syntax=".using &lt;i&gt;module&lt;/i&gt;"
+            description="Allows access to a module's local labels from the current module. The current module always takes priority, and any modules added through .using are given more priority based on the how early they were added.">
+            <example code=".module Main
+_label = 1
+.endmodule
+
+.module Test1
+    ld a,_label ; Assembler error.
+.endmodule
+
+.module Test2
+.using Main
+    ld a,_label ; a = 1.
+.endmodule
+
+.module Test3
+.using Main
+    ld a,_label ; a = 2
+_label = 2
+.endmodule
+
+.module Test4
+.using Test3
+.using Main
+    ld a,_label ; a = 2 (Test 3 takes priority)
+.endmodule" />
+        </item>
+
+        <item
+            name="endmodule"
+            highlight=".endmodule"
+            colour="directive"
+            syntax=".endmodule"
+            description="Clears the current module and reverts to the default (&lt;tt&gt;noname&lt;/tt&gt;). The same as &lt;tt&gt;.module&lt;/tt&gt; with no arguments, but does not display an error." />            
+
+        <item
+            name="relocate"
+            highlight=".relocate"
+            colour="directive"
+            syntax=".relocate &lt;i&gt;address&lt;/i&gt;"
+            description="Defines a block of code as relocatable. Whilst the block of code is output at the current address, all labels are calculated with an offset applied, to allow the block of code to be copied elsewhere with the correct label addresses.">
+	<example code="; RAM is at location $C000
+ram = $C000
+
+.org $0000 ; We're in ROM.
+
+    ; Copy to RAM
+    ld hl,code
+    ld bc,code-code_end
+    ld de,ram
+    ldir
+    
+    ; Run it:
+    call ram
+    
+    ; End the program
+    di
+    halt
+
+; ---
+
+code
+.relocate ram
+
+    ld a,10
+    ld (counter+1),a
+
+loop
+    call do_something
+counter
+    ld a,0 ; Self-modifying
+    dec a
+    ld (counter+1),a
+    jp nz,loop
+    ret
+    
+.endrelocate
+code_end 
+
+; ---
+
+do_something
+    push af
+    out ($CC),a
+    pop af
+    ret" />
+	<note description="Bear in mind that the special symbol $ (current instruction pointer) is also translated." />
+	</item>
+
+   <item
+        name="endrelocate"
+        highlight=".endrelocate"
+        colour="directive"
+        syntax=".endrelocate"
+        description="Marks the end of a relocatable code block."
+    />
+            
+        <item
+            name="equ"
+            highlight=".equ"
+            colour="directive"
+            syntax="&lt;i&gt;label&lt;/i&gt; .equ &lt;i&gt;value&lt;/i&gt;"
+            description="This assigns a label with a particular value, so you can then use the label in expressions rather than the constant each time.">
+            <example code="size_of_array .equ 30
+and_factor = %00001111
+
+    ; ...
+
+    ld b, size_of_array
+_loop:
+    ld a, (hl)
+    call do_something
+    and and_factor
+    ld (hl), a
+    inc hl
+    djnz _loop" />
+            <note description="= (equals sign) is an alias for .equ." />
+            
+        </item>
+        
+        <item
+            name="export"
+            highlight=".export"
+            colour="directive"
+            syntax=".export &lt;i&gt;label [, label [, label [, ...]]]&lt;/i&gt;"
+            description="This tells Brass to add a label name to the label export file.">
+            <example code=".org $100
+start_of_code:
+    .dw $FAFF
+end_of_code:
+
+.export start_of_code, end_of_code
+
+; This would produce the file:
+; -----------------------------
+; start_of_code   .equ    $0100
+; end_of_code     .equ    $0102
+;------------------------------" />
+        </item>
+        
+        <item
+            name="var"
+            highlight=".var"
+            colour="directive"
+            syntax=".var &lt;i&gt;size, name&lt;/i&gt;"
+            description="This is another way to declare a label, designed to make adding variables which point to some location of safe RAM easier. The size argument is in bytes - 1 declares a byte, 2 a word, 324 a 324 byte region. The name is just any old label name (local label rules still apply!) This directive makes very little sense alone, you need &lt;a href=lnh_varloc&gt;.varloc&lt;/a&gt; for it to be of any use." />
+            
+        <item
+            name="varloc"
+            highlight=".varloc"
+            colour="directive"
+            syntax=".varloc &lt;i&gt;location [, size]&lt;/i&gt;"
+            description="This directive is to used with the directive &lt;a href=lnh_var&gt;.var&lt;/a&gt; to create a bunch of labels which point to variables in areas of memory without you having to manually calculate the offsets in memory yourself.">
+            <example code=".define safe_ram $CED5
+.varloc safe_ram, 128 ; We have 128 bytes of safe RAM here
+.var 1, me_x    ; $CED5
+.var 1, me_y    ; $CED6
+.var 2, me_dx   ; $CED7
+.var 2, me_dy   ; $CED9
+.var 1, me_s    ; $CEDB" />
+            <note description="The only reason to declare a size is as an extra precaution; if you overfill your current area of RAM, Brass will warn you for each new variable that it's going into uncharted territory. Specifying a size of 0 (or no size at all) will stop Brass from displaying the warnings." />
+        </item>
+
+       <item
+            name="varfree"
+            highlight=".varfree"
+            colour="directive"
+            syntax=".var &lt;i&gt;label&lt;/i&gt;"
+            description="Create a new label containing a pointer to the end of the current variable table." />
+ 
+
+               
+    </group>
+    <group name="Data">
+        <item
+            name="db/byte/text/dw/word"
+            highlight=".db/.byte/.text/.dw/.word"
+            colour="directive"
+            syntax=".db expression [, expression [, expression [, ...]]]"
+            description="Defines bytes (.db, .byte, .text) or words (.dw, .word). You can specify a comma-delimited list of expressions. Unlike most places expressions are used, you can include strings.">
+            <example code=".db 1, 2, 3, 4
+.dw $CAFE, $BABE
+.db &amp;quot;This is a string&amp;quot;
+.db '!', $20
+.db &amp;quot;Here's a \&amp;quot;capital\&amp;quot; E: &amp;quot;
+.db 'e'+('A'-'a'), 0" />
+        </item>
+        
+        <item
+            name="incbin"
+            highlight=".incbin/#incbin"
+            colour="directive"
+            syntax=".incbin filename [, rle] [, label=size] [, start=index] [, end=index] [, rule=expression]"
+            description="Inserts a binary file straight into the output - no assembling is done. This can be useful to hold data (such as sprites or large amounts of text) in an external file in a raw format, rather than having to expand to multiple .db statements.&lt;br /&gt;&lt;br /&gt;Setting the flag RLE causes the binary to be RLE compressed using the current RLE mode settings.&lt;br /&gt;&lt;br /&gt;Specifying a label name, followed by =size, creates a new label containing the size of the original binary (uncompressed).&lt;pre class=&quot;code&quot;&gt;.incbin &amp;quot;readme.txt&amp;quot;, rle, uncompressed = size
+file_end
+
+compressed = file_end - file_start
+
+.echo &amp;quot;README.TXT compressed from &amp;quot;
+.echo uncompressed
+.echo &amp;quot;b to &amp;quot;
+.echo compressed
+.echo &amp;quot;b (&amp;quot;
+.echo (compressed * 100) / uncompressed
+.echo &amp;quot;%)\n&amp;quot;&lt;/pre&gt;
+The start and end flags allow you to specify the range of data inside the file that you want to include (zero-indexed). For example, a start = 256 would ignore the first 256 bytes of data in the file. end points to the last byte you want included. start=1, end=3 would include bytes 1, 2 and 3 into the final binary. By combining them with a size label, you could do things like this:&lt;pre class=&quot;code&quot;&gt;.incbin &amp;quot;hello.txt&amp;quot;, start=1, end=total-2, total=size&lt;/pre&gt;...which would strip out the first and last byte from the binary.
+&lt;br /&gt;&lt;br /&gt;
+Last of all is the rule field. This works like the &lt;a href=lnh_asciimap&gt;.asciimap&lt;/a&gt; directive - for each byte of the binary, an expression is evaluated to translate the byte in some way. The special string {*} represents the byte being translated. For example, the rule &lt;tt&gt;rule={*}+1&lt;/tt&gt; would add 1 to each byte.">
+        </item>
+           
+        <item
+            name="rlemode"
+            highlight=".rlemode"
+            colour="directive"
+            syntax=".rlemode run_indicator [, value_first]"
+            description="Sets the current RLE mode - first, the byte value used to represent a run (defaults to $91), followed by a flag to set whether the value or the length is written first after the run indicator (defaults to true).">
+        <example code="; FILE.BIN contains the string ABCDDDDDEFG
+.rlemode $91, 1
+.incbin file.bin
+; .db 'A','B','C',$91,'D',5,'E','F','G'
+
+.rlemode $F0, 0
+.incbin file.bin
+; .db 'A','B','C',$F0,5,'D','E','F','G'
+
+.rlemode $00
+.incbin file.bin
+; .db 'A','B','C',$00,'D',5,'E','F','G'" /> 
+        </item>
+
+        <item
+            name="block"
+            highlight=".block"
+            colour="directive"
+            syntax=".block size"
+            description="Advances the program counter by the specified size. This can be useful to allocate space."
+        >
+            <example code="string_buffer: .block 256" />
+        </item>
+
+        <item
+            name="chk"
+            highlight=".chk"
+            colour="directive"
+            syntax=".chk label"
+            description="Calculates an 8-bit checksum made up of the sum of all the data between the current instruction pointer and the specified label. Does not produce the same results as TASM, so this is not a recommended directive."
+        >
+            <example code="_label:
+    .db 1
+    .db 4
+    .db 54
+    .chk _label
+; Has a value of 59 with Brass, 51 in TASM." />
+        </item>
+        
+        <item
+            name="fill/fillw"
+            highlight=".fill/.fillw"
+            colour="directive"
+            syntax=".fill count [, value]"
+            description="Outputs &lt;i&gt;count&lt;/i&gt; bytes (fill) or words (fillw), with the value &lt;i&gt;value&lt;/i&gt;. If value is not specified, $FF/$FFFF is substituted. For example, .fill 3, $BB is equivalent to .db $BB, $BB, $BB."
+        >
+        </item>
+        
+        
+        <item
+            name="dbrnd/dwrnd"
+            highlight=".dbrnd/.dwrnd"
+            colour="directive"
+            syntax=".dbrnd count, min, max"
+            description="Outputs &lt;i&gt;count&lt;/i&gt; random bytes (dbrnd) or words (dwrnd) between min and max. For example, you could generate a random 4-character string of letters for one of those annoying website 'I am not a machine, honest!' verification things:"
+        >
+            <example code=".dbrnd 4, 'A', 'Z'" />
+        </item>
+        
+        <item
+            name="asc"
+            highlight=".asc"
+            colour="directive"
+            syntax=".asc expression [, expression [, expression [, ...]]]"
+            description="This performs virtually the same operation as &lt;a href=lnh_db&gt;.db&lt;/a&gt; with the exception that each byte defined is modified using the current ASCII translation table (declared using &lt;a href=lnh_asciimap&gt;.asciimap&lt;/a&gt;)."
+        >
+        </item>
+        
+        <item
+            name="asciimap"
+            highlight=".asciimap"
+            colour="directive"
+            syntax=".asciimap start, [end], rule"
+            description="Defines an ASCII mapping table. In English, this is a special table that can be used to translate strings from the ASCII you're dealing with on your PC to any special variations on the theme on the Z80 device you are assembling to. For example, the TI-83 Plus calculator has a &amp;theta; symbol where the '[' is normally. Using an ASCII mapping table, you could automatically make any strings defined using the &lt;a href=lnh_asc&gt;.asc&lt;/a&gt; directive handle this oddity. Another possibility would be a font where A-Z is actually 0-25 rather than the usual 65-90."
+        >
+        <example code="; Force all strings UPPERCASE
+.asciimap 'a', 'z', {*}+('A'-'a')
+
+; Reset to standard mapping
+.asciimap $00, $FF, {*}
+
+; Turn spaces into underscores
+.asciimap ' ', '_'
+
+; Make each letter in the range A&amp;rarr;Z one bigger (A&amp;rarr;B, B&amp;rarr;C &amp;amp;c)
+.asciimap 'A', 'Z', {*}+1
+
+; Clear the most significant bit (limit to 7-bit ASCII).
+.asciimap 128, 255, {*}&amp;amp;%01111111" />
+        </item>
+
+        <item
+            name="dbsin/dbcos/dwsin/dwcos"
+            highlight=".dbsin/.dbcos/.dwsin/.dwcos"
+            colour="directive"
+            syntax=".dbsin angles_in_circle, amplitude_of_wave, start_angle, end_angle, angle_step, DC_offset"
+            description="Use this directive to define trigonometric tables.
+&lt;br /&gt;&lt;br /&gt;
+First of all, you need to define the number of angles in a complete circle (cycle of the wave). For example, there are 360&amp;deg; in a circle, so to create a table which uses our degrees scale, use 360. A more sensible value to use would be 256, so a complete sinusoidal wave would fit into 256 angles.
+&lt;br /&gt;&lt;br /&gt;
+Next you need to specify the amplitude of the wave. To use the range of a byte, 127 seems sensible, for example.
+&lt;br /&gt;&lt;br /&gt;
+The next 3 arguments are used to denote which angles to generate the table from as a range. For example, to output the angles 0-179 for a half wave (when using a 360&amp;deg; table), you would specify 0, 179, 1. You could, for example, skip every other angle by using 0, 179, 2, or run backwards with 179, 0, -1 (note ordering of arguments!)
+&lt;br /&gt;&lt;br /&gt;
+Last of all is the DC offset applied to your wave. 0 centres it around 0, a positive value shifts the wave up and a negative value shifts the wave down.
+&lt;br /&gt;&lt;br /&gt;
+It might be clearer to see some pseudo-code for the way the table is generated:
+&lt;pre class=code&gt;for angle is start_angle to end_angle step angle_step
+    output_value(DC_offset +
+        amplitude_of_wave *
+            sin((angle / angles_in_circle) * 2&amp;pi;)
+    )
+next angle&lt;/pre&gt;
+The .dbsin and .dwsin directives generate a sine table, .dbcos and .dwcos generate a cosine table. Needless to say, the .db* versions output bytes, the .dw* versions output words."
+        >
+        </item>
+        
+        <item
+            name="incbmp"
+            highlight=".incbmp"
+            colour="directive"
+            syntax=".incbmp filename [, threshold] [, rle]"
+            description="This directive can be used to load a monochrome bitmap image (BMP, PNG, GIF, JPEG...) and include it directly into your program. The bitmap is padded with 0s to make it a multiple of 8 bits wide, and a 1 corresponds to a black pixel. Any pixel which is darker than the threshold (which defaults to 127) is considered black, any pixel brighter is considered white. Specifying the flag RLE compresses the data after conversion"
+        >
+        </item>
+        
+    </group>    
+    <group name="Macros">
+        <item
+            name="define"
+            highlight=".define/#define"
+            colour="directive"
+            syntax=".define name[(argument [, argument [, ...]])] replacement"
+            description="Defines a new (TASM-style) macro. Macros are basic find-and-replace operations, and as such lines of code are modified before being assembled. Because of this, you can do some silly things with macros; for example make XOR perform an AND operation, or call the accumulator fred.
+&lt;br /&gt;&lt;br /&gt;
+The simplest macro will take one thing and replace it with another, such as:
+&lt;br /&gt;&lt;br /&gt;
+&lt;pre class=code&gt;.define size_of_byte 8
+    ; ...
+    ld a, size_of_byte&lt;/pre&gt;
+When the macro preprocessor sees the line ld a, size_of_byte it will get to work and replace it with ld a, 8. 
+&lt;br /&gt;&lt;br /&gt;
+It is important to realise that this is handled by the preprocessor - long before the actual code is even sent to the main assembler. As far as the actual assembler is concerned, that line never was never ld a, size_of_byte - it was always ld a, 8. The preprocessor only runs at the start of the first pass - this is why you cannot forward-reference macros. The reason for this is that one macro can affect another.
+&lt;br /&gt;&lt;br /&gt;
+To give the macros a little more power, it is possible to define a macro that takes some arguments. The arguments are a comma-delimited list of argument names, and any instance of them in the replacement section of the macro will be substituted by the value passed when the macro is called. For example:
+
+&lt;pre class=code&gt;.define big_endian(value) .db value >> 8 \ .db value &amp;amp; $FF
+    ; ...
+    big_endian($F001)&lt;/pre&gt;
+This would assemble as &lt;tt&gt;.db $F001 >> 8 \ .db $F001 &amp;amp; $FF&lt;/tt&gt;, displaying $F0, $01 in a hex editor, rather than the usual $01, $F0.
+&lt;br /&gt;&lt;br /&gt;
+Multiple arguments aren't much more difficult:
+
+&lt;pre class=code&gt;.define call_on_success(test, success) call test \ or a \ call z, success
+    ; ...
+    call_on_success(open_file, read_file)
+    ; ...
+
+open_file:
+    ; (hl) contains 0 if file exists, 1 if it doesn't.
+    ld a, (hl)
+    ret
+
+read_file:
+    ; This will not get called if open_file fails (returns non-zero).
+    ret&lt;/pre&gt;
+One special case macro is one where you don't give it any replacement and no arguments, such as &lt;tt&gt;.define FISHCAKES&lt;/tt&gt;. In this case, the macro replaces itself with itself (so FISHCAKES becomes FISHCAKES), not nothing. However, a test to see if the macro exists through .ifdef FISHCAKES will still be true.
+&lt;br /&gt;&lt;br /&gt;
+Another difference between TASM and Brass is that Brass has a more advanced macro system. A single macro name (such as call_on_success above) can have multiple replacements, and the correct one is identified by the replacement signature.
+&lt;br /&gt;&lt;br /&gt;
+A replacement signature is the internal representation of the argument list in a macro. By default, each argument is treated as a wildcard, but by surrounding it with {} curly braces you can force it to be a particular string, for example:
+&lt;br /&gt;&lt;br /&gt;
+&lt;pre class=code&gt;; Signature of *
+.define my_macro(label) call label
+
+; Signature of *,*
+.define my_macro(label, variable) ld a,variable \ call label
+
+; Signature of *,a
+.define my_macro(label, {a}) call label
+
+; Signature of 0,*
+.define my_macro({0}, variable) call something \ ld a,variable&lt;/pre&gt;
+The advantage of this is that you can create multiple macros - one being a general case macro, the others being specific cases where you can apply optimisations. Here's an example - let's say you had a function called sqr_root that you wanted to wrap in a macro for some reason. Here's the TASM approach:
+
+&lt;pre class=code&gt;#define sqrt(var) ld a,var\ call sqr_root
+
+    sqrt(43)    ; Generates ld a,43\ call sqr_root
+    sqrt(0)     ; Generates ld a,0\ call sqr_root (could be xor a!)
+    sqrt(a)     ; Generates ld a,a\ call sqr_root (oh dear)&lt;/pre&gt;
+The Brass version would be:
+
+&lt;pre class=code&gt;.define sqrt(var) ld a,var\ call sqr_root
+.define sqrt({0}) xor a\ call sqr_root
+.define sqrt({a}) call sqr_root
+
+    sqrt(43)    ; Generates ld a,43\ call sqr_root
+    sqrt(0)     ; Generates xor a\ call sqr_root
+    sqrt(a)     ; Generates call sqr_root&lt;/pre&gt;
+To make this sort of thing easier for yourself, it's a good idea to create a list of useful macros that handle the basic cases for you - for example, as a ld a,* replacement:
+
+&lt;pre class=code&gt;.define ld_a(var) ld a,var
+.define ld_a({0}) xor a
+.define ld_a({a})
+; Now we have a sensible ld a,* macro replacement, use it to build the rest:
+.define sqrt(var) ld_a(var)\ call sqr_root
+.define cbrt(var) ld_a(var)\ call cube_root&lt;/pre&gt;
+Another possible use of this is to be able to assign defaults to arguments (Ion's sprite routine springs to mind - how often do you use it to display a non-8x8 sprite?)
+
+&lt;pre class=code&gt;; Assume ld_a()/ld_b() macros defined as above.
+; _display is a function to display the number in 'a' in a number of bases:
+; 'b' specifies which base we want to print it in.
+
+.define display_in_base(var, base) ld_a(var)\ ld_b(var)\ call _display
+.define display_in_base(var)       ld_a(var)\ ld b,10\ call _display
+
+; Display 43 in base 2.
+display_in_base(43,2)
+
+; Display 65 in base 16.
+display_in_base(65,16)
+
+; Display 124 in base 10 (default).
+display_in_base(124)&lt;/pre&gt;
+"
+        >
+        </item>
+        
+	<item
+            name="undef"
+            highlight=".undef/#undef"
+            colour="directive"
+            syntax=".undef &lt;i&gt;macro&lt;/i&gt;"
+            description="Undefine a previously defined macro."
+        />
+
+        <item
+            name="defcont"
+            highlight=".defcont/#defcont"
+            colour="directive"
+            syntax=".defcont replacement"
+            description="In TASM, this is a way to get around the 255 column limit and also to split your &lt;a href=lnh_define&gt;.define&lt;/a&gt; statements onto multiple lines. It tacks &lt;i&gt;replacement&lt;/i&gt; onto the end of the last defined macro."
+        >
+            <example code=".define big_macro(arg) ld a, arg
+.defcont \ push af
+.defcont \ call blort
+.defcont \ cp arg \ ret nz
+.defcont \ inc a \ call
+.defcont blort" />
+        </item>        
+        
+    </group>
+    
+    <group name="Output">
+        <item
+            name="binarymode"
+            highlight=".binarymode"
+            colour="directive"
+            syntax=".binarymode mode"
+            description="This directive specifies the format of the output binary. Mode can be one of the following:
+            &lt;table&gt;
+            &lt;tr&gt;&lt;th&gt; Mode &lt;/th&gt;&lt;th&gt; Description &lt;/th&gt;&lt;/tr&gt;
+            &lt;tr&gt;&lt;td&gt; Raw &lt;/td&gt;&lt;td&gt; Plain, unformatted binary. (Default)  &lt;/td&gt;&lt;/tr&gt;
+            &lt;tr&gt;&lt;td&gt; Intel &lt;/td&gt;&lt;td&gt; Intel hex format. &lt;/td&gt;&lt;/tr&gt;
+            &lt;tr&gt;&lt;td&gt; IntelWord &lt;/td&gt;&lt;td&gt; Intel hex word address format. &lt;/td&gt;&lt;/tr&gt;
+            &lt;tr&gt;&lt;td&gt; MOS &lt;/td&gt;&lt;td&gt; MOS Technology hex format. &lt;/td&gt;&lt;/tr&gt;
+            &lt;tr&gt;&lt;td&gt; Motorola &lt;/td&gt;&lt;td&gt; Motorola hex format.  &lt;/td&gt;&lt;/tr&gt;
+            &lt;tr&gt;&lt;td&gt; TI73 &lt;/td&gt;&lt;td&gt; TI-73 binary (*.73?) &lt;/td&gt;&lt;/tr&gt;
+            &lt;tr&gt;&lt;td&gt; TI82 &lt;/td&gt;&lt;td&gt; TI-82 binary (*.83?) &lt;/td&gt;&lt;/tr&gt;
+            &lt;tr&gt;&lt;td&gt; TI83 &lt;/td&gt;&lt;td&gt; TI-83 binary (*.83?) &lt;/td&gt;&lt;/tr&gt;
+            &lt;tr&gt;&lt;td&gt; TI8X &lt;/td&gt;&lt;td&gt; TI-83+ binary (*.8x?) &lt;/td&gt;&lt;/tr&gt;
+            &lt;tr&gt;&lt;td&gt; TI85 &lt;/td&gt;&lt;td&gt; TI-85 binary (*.85?) &lt;/td&gt;&lt;/tr&gt;
+            &lt;tr&gt;&lt;td&gt; TI85 &lt;/td&gt;&lt;td&gt; TI86 TI-86 binary (*.86?) &lt;/td&gt;&lt;/tr&gt;          
+            &lt;tr&gt;&lt;td&gt; SegaMS &lt;/td&gt;&lt;td&gt; Sega Master System ROM (*.sms) &lt;/td&gt;&lt;/tr&gt;                    
+            &lt;tr&gt;&lt;td&gt; SegaGG &lt;/td&gt;&lt;td&gt; Sega Game Gear ROM (*.gg) &lt;/td&gt;&lt;/tr&gt;                                
+            &lt;/table&gt;"
+        />
+        
+        <item
+            name="variablename"
+            highlight=".variablename"
+            colour="directive"
+            syntax=".variablename name"
+            description="For binary modes that support a variable name, such as the TI output formats, you can use this directive to specify the variable name. It defaults to the filename (minus extension) of the source file."
+        />
+
+        <item
+            name="tivariabletype"
+            highlight=".tivariabletype"
+            colour="directive"
+            syntax=".tivariabletype type"
+            description="Specify a variable type if outputting a TI binary. This defaults to an edit-locked program for the current platform (note that it's not always the same on all platforms - so $06 on a TI-83 or $12 on a TI-85)."
+        />
+        
+        <item
+            name="binaryrange"
+            highlight=".binaryrange"
+            colour="directive"
+            syntax=".binaryrange start, end"
+            description="Force the output binary to span the declared range, rather than just between the lowest and highest memory addresses written to overall."
+        />
+
+        <item
+            name="binaryfill"
+            highlight=".binaryfill"
+            colour="directive"
+            syntax=".binaryfill value"
+            description="Specifies the value used when a byte is left undefined in the output binary (defaults to $FF)."
+        />
+
+        <item
+            name="sdsctag"
+            highlight=".sdsctag"
+            colour="directive"
+            syntax=".sdsctag version, title, description, author"
+            description="This tells Brass to add an SDSC tag to the output binary (provided either Master System or Game Gear modes have been set using the .binarymode directive). Version is expected to be in the form x.y (major and minor), the other three fields should either be string constants or pointers to strings. Brass will try to find free space in the ROM and create the strings/pointers for you if you specify a string constant. For this reason, you cannot assume that all free space will have the value of .binaryfill when using this directive with string constants, as one of the SDSC tag strings might have been copied there.">
+        <example code=".sdsctag 1.03, title, &amp;quot;SDSC tag demo&amp;quot;, &amp;quot;Ben Ryves&amp;quot;
+        
+title:
+    .db &amp;quot;Demo&amp;quot;, 0" />
+        <note description="Tags must reside within the first $FFFF bytes of the ROM. Version numbers have a limit of 99 (99.99). Other values will be truncated." />
+        </item>
+        
+        <item
+            name="segaregion"
+            highlight=".segaregion"
+            colour="directive"
+            syntax=".segaregion region"
+            description="Specifies the region specified the ROM header. There are three different regions; Japan, Export and International.">
+        <note description="'International' is only applicable to Game Gear ROMs." />
+        </item>
+        
+        <item
+            name="segapart"
+            highlight=".segapart"
+            colour="directive"
+            syntax=".segapart number"
+            description="Specifies the 4-digit part number for the ROM header. Wholly unimportant.">
+        </item>        
+        
+        <item
+            name="segaversion"
+            highlight=".segaversion"
+            colour="directive"
+            syntax=".segaversion version"
+            description="Like the SDSC tag, version is expected to be in x.y format, except that this time you are limited to as far as 9.9. Wholly unimportant.">
+        </item>           
+
+    </group>
+    <group name="Conditionals">
+        <item
+            name="if"
+            highlight=".if/#if"
+            colour="directive"
+            syntax=".if expression"
+            description="If the expression evaluates to true (non zero) then the following block of code is assembled until another conditional statement is hit. If it evaluates to false (zero) then the following block of code is skipped until another conditional statement is hit."
+        />
+
+        <item
+            name="else"
+            highlight=".else/#else"
+            colour="directive"
+            syntax=".else"
+            description="If a preceding conditional statement evaluated to false, the following block of code will be assembled instead. If it evaluated to true, the following block of code will be skipped."
+        />
+
+        <item
+            name="endif"
+            highlight=".endif/#endif"
+            colour="directive"
+            syntax=".endif"
+            description="The current top-level conditional is cleared, and the following code is assembled as normal."
+        >
+            <example code="age = 19
+
+.if age &amp;lt; 18
+    .echo &amp;quot;You are below the legal drinking age.\n&amp;quot;
+.else
+    .echo &amp;quot;Here, have a pint.\n&amp;quot;
+.endif" />
+        </item>
+
+        <item
+            name="elseif"
+            highlight=".elseif/#elseif"
+            colour="directive"
+            syntax=".elseif expression"
+            description="If the preceding if statement failed, this expression is evaluated. It works a bit like a second if statement to replace the first if it doesn't work:"
+        >
+            <example code="#if age &amp;gt; 300
+.echo &amp;quot;Sorry, we don't serve spirits.\n&amp;quot;
+#elseif age &amp;lt; 18
+.echo &amp;quot;You are below the legal drinking age.\n&amp;quot;
+#elseif age &amp;lt; 21
+.echo &amp;quot;Can I see some ID, please?\n&amp;quot;
+#else
+.echo &amp;quot;Here, have a pint.\n&amp;quot;
+#endif" />
+        </item>
+        
+        <item
+            name="ifdef"
+            highlight=".ifdef/#ifdef"
+            colour="directive"
+            syntax=".ifdef "
+            description="Works in the same manner as &lt;a href=lnh_if&gt;.if&lt;/a&gt;, except rather than evaluate an expression it continues assembling if the macro &lt;i&gt;macro&lt;/i&gt; exists, and skips assembling if the macro macro does not exist."
+        />
+        
+        <item
+            name="ifndef"
+            highlight=".ifndef/#ifndef"
+            colour="directive"
+            syntax=".ifndef"
+            description="Is an inverted version of &lt;a href=ifdef&gt;.ifdef&lt;/a&gt; in that it assembles if the macro &lt;i&gt;macro&lt;/i&gt; does not exist."
+        />
+        
+        <item
+            name="elseifdef/elseifndef"
+            highlight=".elseifdef/.elseifndef/#elseifdef/#elseifndef"
+            colour="directive"
+            syntax=".ifndef macro"
+            description="The same as &lt;a href=lnh_elseif&gt;.elseif&lt;/a&gt; except that it uses the lt;a href=lnh_ifdef&gt;.ifdef&lt;/a&gt; or lt;a href=lnh_ifndef&gt;.ifndef&lt;/a&gt; conditionals:"
+        >
+            <example code="#define X marks_the_spot
+
+#ifdef X
+.echo &amp;quot;X is defined.\n&amp;quot;
+#elseifdef Y
+.echo &amp;quot;Y is defined.\n&amp;quot;
+#else
+.echo &amp;quot;Neither X nor Y are defined.\n&amp;quot;
+#endif" />
+        </item>
+    </group>
+    <group name="Assembler Flow Control">
+        <item
+            name="for"
+            highlight=".for"
+            colour="directive"
+            syntax=".for label, start, end, [step]"
+            description="This directive is used to assemble a block of code multiple times. For example; unrolling loops or defining blocks of data programmatically.
+&lt;br /&gt;&lt;br /&gt;
+A label is created and set to the value of start. The code is assembled between the .for directive and the matching &lt;a href=lnh_loop&gt;.loop&lt;/a&gt;, and the value of the label is adjusted by step at the end of each loop. If it goes beyond the value of end, the label is freed and the assembler carries on."
+        >
+        </item>
+        
+        <item
+            name="loop"
+            highlight=".loop"
+            colour="directive"
+            syntax=".loop"
+            description="This directive terminates the last defined .for loop." >
+            <example code=".for i, 0, 7
+.db 1&amp;lt;&amp;lt;i
+.loop
+
+; This assembles as:
+.db %00000001
+.db %00000010
+.db %00000100
+.db %00001000
+.db %00010000
+.db %00100000
+.db %01000000
+.db %10000000" />
+            <example code=".for i, 1, 2
+    call _shift_sprite
+
+; To ensure different label names each loop
+_sprite_loop_{i}:
+    ld a,(de)
+    
+    .if i == 1
+        and (hl)
+    .else
+        or (hl)
+    .endif
+    
+    ld (hl),a
+    inc hl
+    inc de
+    call _update_pointers
+    djnz _sprite_loop_{i}
+    
+.loop" />
+        <example code=".for y,0,7
+    .for x,0,7
+        .db x+y*2
+    .loop
+.loop" />
+        </item>        
+    </group>
+    <group name="File Operations">
+        <item
+            name="fopen"
+            highlight=".fopen"
+            colour="directive"
+            syntax=".fopen handle, filename"
+            description="This opens the file specified by filename and creates a file handle which can be used to perform any of the below file operations with."
+        >
+        </item>
+        <item
+            name="fclose"
+            highlight=".fclose"
+            colour="directive"
+            syntax=".fclose handle"
+            description="This closes the file handle. All open file handles are automatically closed for you on each pass."
+        >
+        </item> 
+        <item
+            name="fsize"
+            highlight=".fsize"
+            colour="directive"
+            syntax=".fclose handle, label"
+            description="This gets the size of the handle and stores the result in a new label."
+        >
+        </item>      
+        
+        <item
+            name="fread/freadw"
+            highlight=".fread/.freadw"
+            colour="directive"
+            syntax=".fread handle, label"
+            description="This reads a byte (.fread) or word (.freadw) from the file handle and stores the result in the label label. The position of the pointer in the file stream is shunted along to point to the next byte/word."
+        >
+            <example code="; Open the file 'hello.txt' and include
+; the data, stripping out the letter 'e':
+
+; fhnd is our handle
+.fopen fhnd, &amp;quot;hello.txt&amp;quot;
+
+; hello_size = size of &amp;quot;hello.txt&amp;quot; in bytes
+.fsize fhnd, hello_size
+
+; Go through each byte...
+.for i, 1, hello_size
+    ; Read a byte and store it as chr
+    .fread fhnd, chr
+    
+    .if chr!='e' &amp;amp;&amp;amp; chr!='E'
+        .db chr
+    .endif
+    
+.loop
+
+; Close our file handle.
+.fclose fhnd" />
+        </item>                     
+
+        <item
+            name="fpeek/fpeekw"
+            highlight=".fpeek/.fpeekw"
+            colour="directive"
+            syntax=".fpeek handle, label"
+            description="This reads a byte (.fpeek) or word (.fpeekw) from the file handle and stores the result in the label. The file pointer is not updated."
+        >
+        </item>   
+
+        <item
+            name="fpos"
+            highlight=".fpos"
+            colour="directive"
+            syntax=".fpos handle, label"
+            description="Returns the file pointer position in file handle and stores the result in label."
+        >
+        </item>  
+
+        <item
+            name="fseek"
+            highlight=".fseek"
+            colour="directive"
+            syntax=".fseek handle, address"
+            description="Sets the file pointer position in file handle to position &lt;i&gt;address&lt;/i&gt; (in bytes)."
+        >
+            <example code="; Open the file 'hello.txt' and include
+; the data, reversing it.
+
+.fopen fhnd, &amp;quot;hello.txt&amp;quot;
+.fsize fhnd, hello_size
+
+; Go through each byte, backwards.
+.for i, hello_size - 1, 0, -1
+    .fseek fhnd, i
+    .fpeek fhnd, chr
+    .db chr
+.loop
+
+.fclose fhnd" />
+        </item> 
+
+    </group>
+    
+    <group name="Paging">
+        <item
+            name="defpage"
+            highlight=".defpage"
+            colour="directive"
+            syntax=".defpage number, offset [, size [, origin]]"
+            description="This defines a binary page for the output. By default, the output is configured to be a single, 0-offsetted 64KB page (with a page number of 0), which is usually enough for simple programs/platforms. Breaking up your program into a series of pages is usually the way around the 64KB addressable memory limit of the Z80 CPU. How your device pages different areas of memory is entirely device specific, but these routines try to help you.">
+            <example code=".binaryrange $0000, $5FFF
+            
+; $2000 is 8KB
+.defpage 0, $0000, $2000, $0000 
+
+; Page #1 is  8KB into the output
+.defpage 1, $2000, $2000, $2000 
+
+; Page #2 is 16KB into the output
+.defpage 2, $4000, $2000, $2000 
+
+.page 0 ; This is page 0.
+
+; Swap in page #1:
+    ld a,1
+    out ($40),a
+    call $2000
+    ; C will now be 1.
+
+    ld a,2
+    out ($40),a
+    call $2000
+    ; C will now be 2.
+
+.page 1 ; Page 1...
+    ld c,1
+    ret
+
+.page 2 ; Page 2...
+    ld c,2
+    ret" />
+        </item>
+        
+        <item
+            name="page"
+            highlight=".page"
+            colour="directive"
+            syntax=".page number"
+            description="Switch to assembling on a particular page."
+        />
+    </group>
+</helpfile>

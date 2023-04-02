@@ -26,7 +26,7 @@ namespace Brass {
         /// <param name="LabelName">Label name to check</param>
         /// <returns>True if the label is a valid name, false if it is invalid.</returns>
         public static bool CheckLabelName(string LabelName) {
-            string ValidCharacters = "abcdefghijklmnopqrstuvwxyz0123456789_#.?";
+            string ValidCharacters = "abcdefghijklmnopqrstuvwxyz0123456789_.";
             foreach (char C in LabelName.ToLower()) {
                 if (ValidCharacters.IndexOf(C) == -1) return false;
             }
@@ -38,19 +38,32 @@ namespace Brass {
         /// </summary>
         /// <param name="Number">The string to convert.</param>
         /// <returns>The number, as an int (or throws an exception).</returns>
-        public static int ConvertNumber(string Number) {
+        public static int ConvertNumber(string Number) { return (int)ConvertNumber(Number, false); }
+        public static object ConvertNumber(string Number, bool CanGoWrong) {
             int MakeNegative = 1;
             if (Number.StartsWith("¬")) {
                 MakeNegative = -1;
                 Number = Number.Substring(1);
             }
             Number = Number.Trim();
-            if (Number == "") return 0;
-            if (Number == "$") return ProgramCounter;
+            if (Number == "" && !CanGoWrong) return 0;
+            if (Number == "$") return CurrentPage.ProgramCounter + RelocationOffset;
+            if (Number == "#") return CurrentPage.Page;
             if (Number.StartsWith("'") && Number.EndsWith("'") && Number.Length >= 3) {
                 Number = Number.Substring(1, Number.Length - 2).Replace(@"\'", "'");
-                if (Number.Length != 1) throw new Exception("Not a valid character.");
-                return (int)Number[0];
+                if (!(Number.Length == 1 || (Number.Length == 2 && Number[0] == '\\'))) throw new Exception("Not a valid character.");
+                if (Number.Length == 1) {
+                    return (int)Number[0];
+                } else {
+                    switch (Number[1]) {
+                        case 'n': return (int)'\n';
+                        case 'r': return (int)'\r';
+                        case 'b': return (int)'\b';
+                        case 't': return (int)'\t';
+                        case 'f': return (int)'\f';
+                        default: throw new Exception("Unsupported escape character '" + Number[1] + "'.");
+                    }
+                }
             }
             if (Number.StartsWith("$") || Number.ToLower().EndsWith("h")) {
                 return Convert.ToInt32(Number.ToLower().Replace("$", "").Replace("h", ""), 16) * MakeNegative;
@@ -69,26 +82,39 @@ namespace Brass {
         /// <param name="WildcardPattern">Pattern to compare against (eg ld hl,*)</param>
         /// <param name="Test">String to test (eg ld hl,_hello)</param>
         /// <returns>True if matched, False if not matched.</returns>
-        public static bool MatchWildcards(string WildcardPattern, string Test) {
+        public static bool MatchWildcards(string WildcardPattern, string Test, ref ArrayList Match) {
+
             string Working = Test.Trim().ToLower().Replace("\t", "").Replace(" ", "");
-            if (WildcardPattern == "\"\"" && Working == "") return true;
+
+            if (WildcardPattern == "\"\"" && Working == "") {
+                Match.Clear();
+                return true;
+            }
+
             // Adding \r to the end is IMPORTANT.
             // Otherwise, a,(*) vs a,((3+1)*2) would NOT match.
             WildcardPattern += "\r";
             Working += "\r";
             //
             string TokenToMatch = "";
+            Match.Clear();
             for (int i = 0; i < WildcardPattern.Length; ++i) {
                 if (WildcardPattern[i] == '*') {
-                    if (Working.StartsWith(TokenToMatch) == false) return false;
+                    if (!Working.StartsWith(TokenToMatch)) return false;
                     if (i == WildcardPattern.Length - 2) return true;
-                    //Working = Working.Substring(i);
                     string EndOfAsteriskToMatch = WildcardPattern.Substring(i + 1);
-                    if (EndOfAsteriskToMatch.IndexOf('*') != -1) {
-                        EndOfAsteriskToMatch = EndOfAsteriskToMatch.Remove(EndOfAsteriskToMatch.IndexOf('*'));
+                    int AsteriskMatched = EndOfAsteriskToMatch.IndexOf('*');
+                    if (AsteriskMatched != -1) {
+                        EndOfAsteriskToMatch = EndOfAsteriskToMatch.Remove(AsteriskMatched);
                     }
                     int JumpToNextBit = Working.IndexOf(EndOfAsteriskToMatch);
                     if (JumpToNextBit == -1) return false;
+                    string MatchedAsterisk = Working.Remove(JumpToNextBit).Substring(TokenToMatch.Length);
+                    int DetectBuggeredParens = MatchedAsterisk.IndexOf(")");
+                    if (DetectBuggeredParens != -1) {
+                        int FindMatchingParens = MatchedAsterisk.IndexOf("(");
+                        if (FindMatchingParens == -1 || FindMatchingParens > DetectBuggeredParens) return false;
+                    }
                     Working = Working.Substring(JumpToNextBit);
                     TokenToMatch = "";
                 } else {
@@ -96,7 +122,7 @@ namespace Brass {
                 }
                 if (i == WildcardPattern.Length - 1) {
                     return (TokenToMatch.ToLower() == Working);
-                }                   
+                }
             }
             return false;
         }
@@ -114,8 +140,11 @@ namespace Brass {
             if (WildcardPattern.IndexOf('*') == -1) return Returner;
 
             Source = SafeStripWhitespace(Source) + "\r";
-            WildcardPattern += "\r";
+
             if (WildcardPattern == "\"\"" && Source == "") return Returner;
+
+            WildcardPattern += "\r";
+
             for (int i = 0; i < WildcardPattern.Length; ++i) {
                 if (WildcardPattern[i] == '*') {
                     // What's the next bit?
@@ -125,8 +154,9 @@ namespace Brass {
                         return Returner;
                     }
                     string NextBit = WildcardPattern.Substring(i + 1);
-                    if (NextBit.IndexOf('*') != -1) {
-                        NextBit = NextBit.Remove(NextBit.IndexOf('*'));
+                    int NextBitIndex = NextBit.IndexOf('*');
+                    if (NextBitIndex != -1) {
+                        NextBit = NextBit.Remove(NextBitIndex);
                     }
                     int EndOfString = Source.ToLower().IndexOf(NextBit);
                     Returner.Add(Source.Remove(EndOfString));
@@ -137,7 +167,7 @@ namespace Brass {
                 }
                 if (i == WildcardPattern.Length - 1) {
                     return Returner;
-                }          
+                }
             }
             return Returner;
         }
@@ -147,59 +177,126 @@ namespace Brass {
         /// </summary>
         /// <param name="Argument">Expression to convert.</param>
         /// <returns>An integer result of the evaluation.</returns>
-        public static int TranslateArgument(string Argument) {
-            if (DebugMode) Console.WriteLine("EXP:>" + Argument);
+        public static string[] Operators = { "?", "||", "&&", "|", "^", "&", "!=", "==", ">=", "<=", ">>", "<<", ">", "<", "+", "-", "%", "/", "*", "~", "!" };/// 
+        public static char[] Parens = { '(', ')' };
+        public static int TranslateArgument(string Argument) { return (int)TranslateArgument(Argument, false); }
+        public static object TranslateArgument(string Argument, bool CanGoWrong) {
+
             // Deal with character constants:
+
             Argument = SafeStripWhitespace(Argument);
             if (Argument.StartsWith("'") && Argument.EndsWith("'") && Argument.Length <= 4) {
                 return ConvertNumber(Argument);
             }
 
             // Deal with reusable labels
+
+            //Hashtable CurrentReusableTable = (Hashtable)ReusableLabels[CurrentPage.Page];
             int ReplaceReusableLabels = Argument.IndexOf('{');
             while (ReplaceReusableLabels != -1) {
                 int EndOfReusableLabel = Argument.IndexOf('}');
-                if (EndOfReusableLabel == -1) throw new Exception("Badly formed reusable label in '" + Argument + "'.");
+                if (EndOfReusableLabel == -1) throw new Exception("Badly formed label in '" + Argument + "'.");
 
                 string Before = Argument.Remove(ReplaceReusableLabels);
                 string After = Argument.Substring(EndOfReusableLabel + 1);
 
                 // Now we need to work out what the reusable label actually is.
-                string RLabel = Argument.Substring(ReplaceReusableLabels, EndOfReusableLabel - ReplaceReusableLabels).Substring(1);
-                if (RLabel == "") throw new Exception("Reusable label not specified.");
+                string RLabel = Argument.Substring(ReplaceReusableLabels, EndOfReusableLabel - ReplaceReusableLabels).Substring(1).Trim();
+                if (RLabel == "") throw new Exception("Label not specified.");
 
-                char RLabelChar = RLabel[0];
-                foreach (char C in RLabel) {
-                    if (C != RLabelChar) throw new Exception("You cannot mix and match symbols in reusable labels.");
-                }
-                if (RLabelChar != '+' && RLabelChar != '-') throw new Exception("Invalid reusable label symbol.");
-
-                int SearchLabel = ProgramCounter;
-                int LabelSearchDir = (RLabelChar == '+') ? 1 : -1;
-                int MaxRange = 0x10000;
-                int LabelAddress = 0;
-                while (MaxRange > 0) {
-                    if (ReusableLabels[SearchLabel] != null) {
-                        object DetectLabel = ((Hashtable)ReusableLabels[SearchLabel])[RLabel];
-                        if (DetectLabel != null) {
-                            LabelAddress = (int)DetectLabel;
-                            break;
+                if (RLabel.IndexOf('@') != -1) {
+                    int Offset = 1;
+                    if (RLabel != "@") {
+                        try {
+                            Offset = TranslateArgument(RLabel.Remove(RLabel.IndexOf('@'), 1));
+                        } catch (Exception ex) {
+                            throw new Exception("@-style reusable label offset malformed - " + ex.Message);
                         }
                     }
-                    SearchLabel += LabelSearchDir;
-                    --MaxRange;
+                    if (Offset == 0) throw new Exception("@-style reusable labels cannot have an offset of zero.");
+                    
+                    if (Offset > 0) Offset--;
+                    int Search = BookmarkIndex + Offset;
+
+                    if (Search >= 0 && Search <= BookmarkLabels.Count) {
+                        Argument = Before + BookmarkLabels[Search] + After;
+                    } else {
+                        Argument = Before + TranslateArgument(RLabel) + After;
+                    }
+
+                } else {
+
+                    if (RLabel.Length != 0 && (RLabel.Replace("+", "") == "" || RLabel.Replace("-", "") == "")) {
+                        int Mode = RLabel[0] == '+' ? 1 : 0;
+                        object CheckMatch = ReusableLabels[Mode][RLabel.Length];
+                        if (CheckMatch == null) throw new Exception("Reusable label " + RLabel + " not found.");
+                        ReusableLabelTracker FindLabel = (ReusableLabelTracker)CheckMatch;
+                        int Search = FindLabel.Index;
+                        if (Mode == 0) --Search;
+                        if (Search >= 0 && Search <= FindLabel.AllLabels.Count) {
+                            Argument = Before + FindLabel.AllLabels[Search] + After;
+                        } else {
+                            Argument = Before + TranslateArgument(RLabel) + After;
+                        }
+                    } else {
+                        break;
+                    }
+
+                    /*if (ReusableLabels[CurrentPage.Page] != null) {
+
+                        bool IsReusable = true;
+
+                        char RLabelChar = RLabel[0];
+                        foreach (char C in RLabel) {
+                            if (C != RLabelChar) {
+                                IsReusable = false;
+                                break;
+                            }
+                        }
+
+                        if (IsReusable && (RLabelChar != '+' && RLabelChar != '-')) {
+                            IsReusable = false;
+                        }
+
+                        if (IsReusable) {
+                            int SearchLabel = CurrentPage.ProgramCounter;
+                            int LabelSearchDir = (RLabelChar == '+') ? 1 : -1;
+                            int MaxRange = 0x10000;
+                            int LabelAddress = 0;
+                            while (MaxRange > 0) {
+
+                                if (CurrentReusableTable[SearchLabel] != null) {
+                                    object DetectLabel = ((Hashtable)CurrentReusableTable[SearchLabel])[RLabel];
+                                    if (DetectLabel != null) {
+                                        LabelAddress = (int)DetectLabel;
+                                        break;
+                                    }
+                                }
+
+                                SearchLabel += LabelSearchDir;
+                                --MaxRange;
+                            }
+                            if (MaxRange <= 0) throw new Exception("Matching '" + RLabel + "' label not found.");
+
+                            Argument = Before + LabelAddress.ToString() + After;
+                        } else {
+                            Argument = Before + TranslateArgument(RLabel) + After;
+                        }
+                    } else {
+                        throw new Exception("Current page has no reusable labels.");
+                    }*/
+
+
+
                 }
-                if (MaxRange <= 0) throw new Exception("Matching '" + RLabel + "' label not found.");
-
-                Argument = Before + LabelAddress.ToString() + After;
-
                 ReplaceReusableLabels = Argument.IndexOf('{');
             }
+
 
             // Deal with double negatives.
             Argument = Argument.Replace("--", "+");
 
-            if (Argument.IndexOfAny(new char[] { '(', ')' }) != -1) {
+            if (Argument.IndexOfAny(Parens) != -1) {
                 // We now need to split apart ( )
                 int ParenIndex = Argument.IndexOf('(');
                 if (ParenIndex == -1) throw new Exception("Mismatched parentheses.");
@@ -224,15 +321,13 @@ namespace Brass {
 
             // NOTE: In REVERSE ORDER OF PRECEDENCE:
             //string[] Operators = { "?", ">>", "<<", "<", ">", ">=", "<=", "==", "!=", "!", "||", "&&", "+", "-", "*", "/", "|", "&", "^", "%", "~" };
-            string[] Operators = { "?", "||", "&&", "|", "^", "&", "!=", "==", ">=", "<=", ">", "<", ">>", "<<", "+", "-", "%", "/", "*", "~", "!" };
+            //string[] Operators = { "?", "||", "&&", "|", "^", "&", "!=", "==", ">=", "<=", ">", "<", ">>", "<<", "+", "-", "%", "/", "*", "~", "!" };
 
             foreach (string Operator in Operators) {
                 Argument = Argument.Replace(Operator + "-", Operator + "¬");
             }
 
             // Now, one important thing to do would be to strip out any % binary numbers.
-
-
 
             int HopToNextPercent = Argument.IndexOf('%');
             while (HopToNextPercent != -1) {
@@ -270,6 +365,36 @@ namespace Brass {
             }
 
 
+            // Label?
+
+            if (Argument.Length != 0) {
+                string JustLabel = Argument[0] == ':' ? Argument.Substring(1) : Argument;
+                string LabelName = FixLabelName(JustLabel, true);
+                if (Labels[LabelName] != null) {
+                    if (Argument[0] == ':') {
+                        return ((LabelDetails)Labels[LabelName]).Page;
+                    } else {
+                        return ((LabelDetails)Labels[LabelName]).Value;
+                    }
+                } else {
+                    // It's NULL.
+                    if (JustLabel.StartsWith("_")) {
+                        // Let's try going through all the different namespaces...
+                        string LabelToCheck = IsCaseSensitive ? JustLabel : JustLabel.ToLower();
+                        foreach (string Module in Namespaces) {
+                            object CheckLabel = Labels[Module + "." + LabelToCheck];
+                            if (CheckLabel != null) {
+                                if (Argument[0] == ':') {
+                                    return ((LabelDetails)CheckLabel).Page;
+                                } else {
+                                    return ((LabelDetails)CheckLabel).Value;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
 
             foreach (String Operator in Operators) {
                 int IndexOfOperator = Argument.LastIndexOf(Operator);
@@ -277,8 +402,9 @@ namespace Brass {
                     // Found an operator.
                     string BeforeOperator = Argument.Remove(IndexOfOperator);
                     string AfterOperator = Argument.Substring(IndexOfOperator + Operator.Length);
+                    if (AfterOperator == "") throw new Exception("'" + Operator + "' operator expects two arguments.");
                     switch (Operator) {
-                        case "+":
+                        case "+":                           
                             return TranslateArgument(BeforeOperator) + TranslateArgument(AfterOperator);
                         case "-":
                             return TranslateArgument(BeforeOperator) - TranslateArgument(AfterOperator);
@@ -331,13 +457,17 @@ namespace Brass {
                 }
             }
 
-            if (Argument.StartsWith(CurrentLocalLabel)) Argument = CurrentModule + "." + Argument;
-            Argument = Argument.Trim();
 
-            if (Labels[IsCaseSensitive ? Argument : Argument.ToLower()] != null) {
-                return (int)Labels[IsCaseSensitive ? Argument : Argument.ToLower()];
+
+            if (CanGoWrong) {
+                try {
+                    return ConvertNumber(Argument, true);
+                } catch {
+                    return Argument;
+                }
+            } else {
+                return ConvertNumber(Argument);
             }
-            return ConvertNumber(Argument);
         }
 
         /// <summary>
@@ -377,6 +507,7 @@ namespace Brass {
         }
 
         public static string EscapeString(string StringToEscape) {
+            if (StringToEscape == null || StringToEscape == "") return "";
             StringToEscape = StringToEscape.Replace(@"\", @"\\");
             StringToEscape = StringToEscape.Replace("\r", @"\r");
             StringToEscape = StringToEscape.Replace("\b", @"\b");
@@ -430,6 +561,7 @@ namespace Brass {
             bool InString = false;
             char StringChar = ' ';
             bool LastCharWasWhitespace = false;
+            StringToStrip = StringToStrip.Trim();
             for (int i = 0; i < StringToStrip.Length; ++i) {
                 if (StringToStrip[i] == ';' && !InString) break;
 
@@ -452,7 +584,6 @@ namespace Brass {
                         }
                     }
                 }
-                //Console.WriteLine(StringToStrip[i] + "\t:" + InString);
                 if (InString || (DoNotStripWhitespace && !LastCharWasWhitespace) || (StringToStrip[i] != ' ' && StringToStrip[i] != '\t' && StringToStrip[i] != '\r')) Return += StringToStrip[i];
                 LastCharWasWhitespace = (StringToStrip[i] == ' ' || StringToStrip[i] == '\t' || StringToStrip[i] == '\r');
             }
@@ -467,7 +598,7 @@ namespace Brass {
         /// <param name="StringToSearch">The string to look in.</param>
         /// <param name="CharToSearch">The character to look for.</param>
         /// <returns>The index of the character if found - if not, -1.</returns>
-        public static int GetSafeIndexOf(string StringToSearch, char CharToSearch) {
+        /*public static int GetSafeIndexOf(string StringToSearch, char CharToSearch) {
             bool InString = false;
             char StringChar = ' '; 
             for (int i = 0; i < StringToSearch.Length; ++i) {
@@ -485,6 +616,30 @@ namespace Brass {
             }
             return -1;
 
+        }*/
+
+
+        public static int GetSafeIndexOf(string StringToSearch, char CharToSearch) {
+            return GetSafeIndexOf(StringToSearch, CharToSearch, 0);
+        }
+        public static int GetSafeIndexOf(string StringToSearch, char CharToSearch, int Start) {
+            bool InString = false;
+            char StringChar = ' ';
+            for (int i = 0; i < StringToSearch.Length; ++i) {
+                if (StringToSearch[i] == '\'' || StringToSearch[i] == '"') {
+                    if (InString == false) {
+                        InString = true;
+                        StringChar = StringToSearch[i];
+                    } else {
+                        if (StringToSearch[i] == StringChar && i > 0 && StringToSearch[i - 1] != '\\') {
+                            InString = false;
+                        }
+                    }
+                }
+                if (StringToSearch[i] == CharToSearch && !InString && i >= Start) return i;
+            }
+            return -1;
+
         }
 
         /// <summary>
@@ -495,11 +650,11 @@ namespace Brass {
         /// <returns>A string[] of the split items.</returns>
         public static string[] SafeSplit(string StringToSplit, char CharToSplitBy) {
             ArrayList Return = new ArrayList();
-            int Split = GetSafeIndexOf(StringToSplit,CharToSplitBy);
+            int Split = GetSafeIndexOf(StringToSplit, CharToSplitBy);
             while (Split != -1) {
                 Return.Add(StringToSplit.Remove(Split));
                 StringToSplit = StringToSplit.Substring(Split + 1);
-                Split = GetSafeIndexOf(StringToSplit,CharToSplitBy);
+                Split = GetSafeIndexOf(StringToSplit, CharToSplitBy);
             }
             Return.Add(StringToSplit);
             return (string[])Return.ToArray(typeof(string));
@@ -510,7 +665,7 @@ namespace Brass {
         /// </summary>
         /// <param name="Token">The token to replace.</param>
         /// <returns>The macro corresponding to the token.</returns>
-        public static string ApplyMacros(string Token) {
+        /*public static string ApplyMacros(string Token) {
 
             Token = SafeStripWhitespace(Token); //.Trim();
             if (Token == "") return "";
@@ -581,7 +736,7 @@ namespace Brass {
                 return Token;
 
             }
-        }
+        }*/
 
     }
 }

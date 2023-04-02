@@ -12,6 +12,7 @@ namespace Brass {
             Raw,                                    // Plain raw COM binary
             TI8X, TI83, TI82, TI86, TI85, TI73,     // TI headered binary
             Intel, IntelWord, MOS, Motorola,        // Hex file format
+            SegaMS, SegaGG,                         // Master System / Game Gear
         }
 
         public class BinaryRecord {
@@ -27,12 +28,54 @@ namespace Brass {
         // Variable type for TI binaries.
         public static int TIVariableType = 0;
         public static bool TIVariableTypeSet = false;
+        public static bool CanStillDefinePage0;
 
+        public class BinaryPage {
+            public byte[] OutputBinary;      // Stores the output stream of bytes.
+            public int[] HasBeenOutput;      // Have we written to this byte?
+            public int ProgramCounter;       // Program counter for this page (each page has a different one)
+            public int StartAddress;         // Position inside output file
+            public int BinaryStartLocation;
+            public int BinaryEndLocation;
+            public int Size;
+            public int Page;
+            public int InitialProgramCounter;
 
-        public static byte[] OutputBinary;      // Stores the output stream of bytes.
-        public static int[] HasBeenOutput;      // Have we written to this byte?
-        public static int BinaryStartLocation;  // Start location of the binary file.
-        public static int BinaryEndLocation;    // End location of the binary file.
+            void init() {
+                OutputBinary = new byte[0x10000];
+                HasBeenOutput = new int[0x10000];
+                BinaryEndLocation = 0x0000;
+                BinaryStartLocation = 0xFFFF;
+                StartAddress = 0x0000;
+                ProgramCounter = 0x0000;
+                InitialProgramCounter = 0x0000;
+                Size = 0x10000;
+                Page = 0;
+            }
+
+            public BinaryPage() {
+                init();
+            }
+            public BinaryPage(int Page, int StartAddress, int Size, int ProgramCounter) {
+                init();
+                this.Page = Page;
+                this.StartAddress = StartAddress;
+                this.Size = Size;
+                this.OutputBinary = new byte[Size];
+                this.HasBeenOutput = new int[Size];
+                this.BinaryStartLocation = Size - 1;
+                this.ProgramCounter = ProgramCounter;
+                this.InitialProgramCounter = ProgramCounter;
+            }
+        }
+
+        public static Hashtable Pages;
+
+        //public static int BinaryStartLocation;  // Start location of the binary file.
+        //public static int BinaryEndLocation;    // End location of the binary file.
+
+        // Page information
+        public static BinaryPage CurrentPage;
 
 
         /// <summary>
@@ -41,28 +84,33 @@ namespace Brass {
         /// <param name="ByteToWrite">Byte value to output</param>
         /// <returns>Success</returns>
         public static bool WriteToBinary(byte ByteToWrite) {
-            if (ProgramCounter < 0) {
+            if (CurrentPage.ProgramCounter < 0) {
                 DisplayError(ErrorType.Error, "Brass cannot assemble binaries which start before memory address 0: Data truncated.");
-                ++ProgramCounter;
+                ++CurrentPage.ProgramCounter;
                 return false;
             }
-            // Allocate more binary space, if need be.
-            if (ProgramCounter >= OutputBinary.Length) {
-                int NewSize = OutputBinary.Length + 0x10000;
-                byte[] NewOutputBinary = new byte[NewSize];
-                int[] NewHasBeenOutput = new int[NewSize];
-                for (int i = 0; i < OutputBinary.Length; ++i) {
-                    NewOutputBinary[i] = OutputBinary[i];
-                    NewHasBeenOutput[i] = HasBeenOutput[i];
-                }
-                OutputBinary = NewOutputBinary;
-                HasBeenOutput = NewHasBeenOutput;
+            if (CurrentPage.ProgramCounter > 0xFFFF) {
+                DisplayError(ErrorType.Warning, "Data overflows 64KB page limit.");
+                CurrentPage.ProgramCounter &= 0xFFFF;
+            }
+            if (CurrentPage.Page == 0) CanStillDefinePage0 = false;
+
+            int AddressInPage = CurrentPage.ProgramCounter - CurrentPage.InitialProgramCounter;
+
+
+            if (AddressInPage < 0 || AddressInPage >= CurrentPage.OutputBinary.Length) {
+                DisplayError(ErrorType.Error, "Attempting to output beyond page boundaries.");
+                return false;
             }
 
-            if (ProgramCounter < BinaryStartLocation) BinaryStartLocation = ProgramCounter;
-            if (ProgramCounter > BinaryEndLocation) BinaryEndLocation = ProgramCounter;
-            ++HasBeenOutput[ProgramCounter];
-            OutputBinary[ProgramCounter++] = ByteToWrite;
+            if (AddressInPage < CurrentPage.BinaryStartLocation) CurrentPage.BinaryStartLocation = AddressInPage;
+            if (AddressInPage > CurrentPage.BinaryEndLocation) CurrentPage.BinaryEndLocation = AddressInPage;
+
+            
+
+            ++CurrentPage.HasBeenOutput[AddressInPage];
+            CurrentPage.OutputBinary[AddressInPage] = ByteToWrite;
+            ++CurrentPage.ProgramCounter;
             return true;
         }
 
@@ -73,7 +121,63 @@ namespace Brass {
         /// <returns>Success</returns>
         public static bool WriteBinary(string BinaryFile) {
             try {
+
                 if (File.Exists(BinaryFile)) File.Delete(BinaryFile);
+
+                // Calculate the TOTAL SIZE.
+                int TotalBinarySize = 0;
+                foreach (int PageNumber in Pages.Keys) {
+                    BinaryPage ToAdd = (BinaryPage)Pages[PageNumber];
+                    if (ToAdd.StartAddress + ToAdd.Size > TotalBinarySize) TotalBinarySize = ToAdd.StartAddress + ToAdd.Size;
+                }
+                TotalBinarySize = Math.Max(TotalBinarySize, 1 + EndOutputAddress - StartOutputAddress);
+
+                if (BinaryType == Binary.SegaMS || BinaryType == Binary.SegaGG) {
+                    // Pad upwards, starting from 32KB
+                    int PadSize = 0x8000;
+                    while (PadSize < TotalBinarySize) {
+                        PadSize <<= 1;
+                    }
+                    TotalBinarySize = PadSize;
+                    StartOutputAddress = 0x0000;
+                    EndOutputAddress = TotalBinarySize - 1;
+                    OnlyOutputMinimalData = false;
+                }
+
+                byte[] OutputBinary = new byte[TotalBinarySize];
+                int[] HasBeenOutput = new int[TotalBinarySize];
+
+                for (int i = 0; i < OutputBinary.Length; ++i) {
+                    OutputBinary[i] = BinaryFillChar;
+                }
+
+                int BinaryStartLocation = TotalBinarySize;
+                int BinaryEndLocation = 0;
+
+
+                foreach (int PageNumber in Pages.Keys) {
+                    BinaryPage ToAdd = (BinaryPage)Pages[PageNumber];
+                    for (int i = ToAdd.BinaryStartLocation; i <= ToAdd.BinaryEndLocation; i++) {
+                        int j = i + ToAdd.StartAddress;
+                        if (j < BinaryStartLocation) BinaryStartLocation = j;
+                        if (j > BinaryEndLocation) BinaryEndLocation = j;
+                        OutputBinary[j] = ToAdd.OutputBinary[i];
+                        HasBeenOutput[j] += ToAdd.HasBeenOutput[i];
+                    }
+                }
+
+                
+
+                if (!OnlyOutputMinimalData) {
+                    BinaryStartLocation = StartOutputAddress;
+                    BinaryEndLocation = EndOutputAddress;
+                }
+
+                #region Sega/SDSC
+                if (BinaryType == Binary.SegaMS || BinaryType == Binary.SegaGG) {
+                    GenerateSegaHeaders(ref OutputBinary, ref HasBeenOutput);
+                }
+                #endregion
 
                 switch (BinaryType) {
                     case Binary.Raw:
@@ -205,7 +309,7 @@ namespace Brass {
 
                             // Write the binary itself
                             for (int i = BinaryStartLocation; i <= BinaryEndLocation; ++i) {
-                                FormattedVariable.Add(OutputBinary[i]);
+                                FormattedVariable.Add(CurrentPage.OutputBinary[i]);
                             }
 
                             #endregion
@@ -301,10 +405,30 @@ namespace Brass {
                         }
                         break;
                 }
+
+                bool CorruptedSection = false;
+                int CorruptedSectionStart = 0;
+                for (int i = BinaryStartLocation; i <= BinaryEndLocation; ++i) {
+                    if (HasBeenOutput[i] > 1) {
+                        if (!CorruptedSection) {
+                            CorruptedSectionStart = i;
+                            CorruptedSection = true;
+                        }
+                    } else {
+                        if (CorruptedSection) {
+                            DisplayError(ErrorType.Warning, "Data overlap between $" + CorruptedSectionStart.ToString("X4") + "-$" + ((int)i - 1).ToString("X4") + ".");
+                        }
+                        CorruptedSection = false;
+                    }
+                }
+
             } catch (Exception ex) {
                 DisplayError(ErrorType.Error, "Could not write output file: " + ex.Message);
                 return false;
             }
+
+            
+
             return true;
         }
     }

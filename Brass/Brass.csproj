@@ -12,6 +12,7 @@
     <RunPostBuildEvent>Always</RunPostBuildEvent>
     <ApplicationIcon>icon.ico</ApplicationIcon>
     <SignAssembly>false</SignAssembly>
+    <StartupObject>Brass.Program</StartupObject>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
@@ -33,10 +34,12 @@
   <ItemGroup>
     <Reference Include="System" />
     <Reference Include="System.Data" />
+    <Reference Include="System.Drawing" />
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Assembler.cs" />
+    <Compile Include="DefaultZ80.cs" />
     <Compile Include="Errors.cs" />
     <Compile Include="Instruction.cs" />
     <Compile Include="Macro.cs" />
@@ -50,10 +53,10 @@
     </Compile>
     <Compile Include="Binaries.cs" />
     <Compile Include="RLE.cs" />
+    <Compile Include="Sdsc.cs" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="icon.ico" />
-    <None Include="Z80.tab" />
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="Properties\Resources.resx">
@@ -61,6 +64,9 @@
       <Generator>ResXFileCodeGenerator</Generator>
       <LastGenOutput>Resources.Designer.cs</LastGenOutput>
     </EmbeddedResource>
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="Backups\" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
