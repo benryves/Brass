@@ -213,12 +213,21 @@ namespace Brass {
             return Returner;
         }
 
-        /// <summary>
-        /// Evaluates an expression into an integer.
-        /// </summary>
-        /// <param name="Argument">Expression to convert.</param>
-        /// <returns>An integer result of the evaluation.</returns>
-        public static string[] Operators = { "||", "&&", "|", "^", "&", "!=", "==", ">=", "<=", ">>", "<<", ">", "<", "+", "-", "%", "/", "*", "~", "!" };//  Removed "?"
+        public static string[][] Operators = {
+			new [] { "||" },
+			new [] { "&&" },
+			new [] { "|" },
+			new [] { "^" },
+			new [] { "&" },
+			new [] { "!=", "==" },
+			new [] { ">=", "<=" },		// relational, should include > and <
+			new [] { ">>", "<<" },
+			new [] { ">", "<" },		// should be with other relational ops but >> and << cause problems otherwise
+			new [] { "+", "-" },
+			new [] { "%", "/", "*" },
+			new [] { "~", "!" }
+		};
+
         public static string OperatorChars = "<>|&^=!+-*/%~";
         public static char[] OperatorCharsAsArray = OperatorChars.ToCharArray();
         public static char[] Parens = { '(', ')' };
@@ -235,7 +244,12 @@ namespace Brass {
             return (uint)RetVal;
         }
 
-        public static double Evaluate(string Argument) { return Evaluate(Argument, false); }
+		/// <summary>
+		/// Evaluates an expression into an integer.
+		/// </summary>
+		/// <param name="Argument">Expression to convert.</param>
+		/// <returns>An integer result of the evaluation.</returns>
+		public static double Evaluate(string Argument) { return Evaluate(Argument, false); }
         public static double Evaluate(string Argument, bool CanGoWrong) {
             //Console.WriteLine("Evaluating: " + Argument);
 
@@ -358,8 +372,10 @@ namespace Brass {
                 return Evaluate(BeforeString + ExecuteFunction(FunctionName, MiddleString) + AfterString);
             }
 
-            foreach (string Operator in Operators) {
-                Argument = Argument.Replace(Operator + "-", Operator + "¬");
+            foreach (string[] GroupedOperator in Operators) {
+				foreach (string Operator in GroupedOperator) {
+					Argument = Argument.Replace(Operator + "-", Operator + "¬");
+				}
             }
 
             // Now, one important thing to do would be to strip out any % binary numbers.
@@ -370,14 +386,16 @@ namespace Brass {
                 if (HopToNextPercent == 0) {
                     IsBinaryNumber = true;
                 } else {
-                    foreach (string Op in Operators) {
-                        if (HopToNextPercent >= Op.Length) {
-                            string PossibleOp = Argument.Substring(HopToNextPercent - Op.Length, Op.Length);
-                            if (Op == PossibleOp) {
-                                IsBinaryNumber = true;
-                                break; // It's preceded by an operator, so it MUST be a binary number.
-                            }
-                        }
+                    foreach (string[] GroupedOp in Operators) {
+						foreach (string Op in GroupedOp) {
+							if (HopToNextPercent >= Op.Length) {
+								string PossibleOp = Argument.Substring(HopToNextPercent - Op.Length, Op.Length);
+								if (Op == PossibleOp) {
+									IsBinaryNumber = true;
+									break; // It's preceded by an operator, so it MUST be a binary number.
+								}
+							}
+						}
                     }
                 }
 
@@ -434,63 +452,77 @@ namespace Brass {
                 return Result;
             }
 
-            foreach (String Operator in Operators) {
-                IndexOfOperator = Argument.LastIndexOf(Operator);
+            foreach (string[] GroupedOperator in Operators) {
 
-                //int IndexOfOperator = Argument.IndexOf(Operator);
+				do {
 
-                if (IndexOfOperator != -1) {
-                    // Found an operator.
-                    string BeforeOperator = Argument.Remove(IndexOfOperator);
-                    string AfterOperator = Argument.Substring(IndexOfOperator + Operator.Length);
-                    if (AfterOperator == "") throw new Exception("'" + Operator + "' operator expects two arguments.");
-                    switch (Operator) {
-                        case "+":
-                            return Evaluate(BeforeOperator) + Evaluate(AfterOperator);
-                        case "-":
-                            return Evaluate(BeforeOperator) - Evaluate(AfterOperator);
-                        case "*":
-                            return Evaluate(BeforeOperator) * Evaluate(AfterOperator);
-                        case "/":
-                            return Evaluate(BeforeOperator) / Evaluate(AfterOperator);
-                        case "|":
-                            return IntEvaluate(BeforeOperator) | IntEvaluate(AfterOperator);
-                        case "&":
-                            return IntEvaluate(BeforeOperator) & IntEvaluate(AfterOperator);
-                        case "^":
-                            return IntEvaluate(BeforeOperator) ^ IntEvaluate(AfterOperator);
-                        case ">>":
-                            return IntEvaluate(BeforeOperator) >> IntEvaluate(AfterOperator);
-                        case "<<":
-                            return IntEvaluate(BeforeOperator) << IntEvaluate(AfterOperator);
-                        case "%":
-                            return Evaluate(BeforeOperator) % Evaluate(AfterOperator);
-                        case "==":
-                            return (Evaluate(BeforeOperator) == Evaluate(AfterOperator)) ? 1 : 0;
-                        case "!=":
-                            return (Evaluate(BeforeOperator) != Evaluate(AfterOperator)) ? 1 : 0;
-                        case ">=":
-                            return (Evaluate(BeforeOperator) >= Evaluate(AfterOperator)) ? 1 : 0;
-                        case "<=":
-                            return (Evaluate(BeforeOperator) <= Evaluate(AfterOperator)) ? 1 : 0;
-                        case ">":
-                            return (Evaluate(BeforeOperator) > Evaluate(AfterOperator)) ? 1 : 0;
-                        case "<":
-                            return (Evaluate(BeforeOperator) < Evaluate(AfterOperator)) ? 1 : 0;
-                        case "&&":
-                            return ((Evaluate(BeforeOperator) != 0) && (Evaluate(AfterOperator) != 0)) ? 1 : 0;
-                        case "||":
-                            return ((Evaluate(BeforeOperator) != 0) || (Evaluate(AfterOperator) != 0)) ? 1 : 0;
-                        case "!":
-                            return (Evaluate(BeforeOperator + (Evaluate(AfterOperator) != 0 ? 0 : 1))) != 0 ? 1 : 0;
-                        case "~":
-                            return Evaluate(BeforeOperator + ((int)~IntEvaluate(AfterOperator)).ToString());
-                        
+					string Operator = "";
+					IndexOfOperator = -1;
 
-                        default:
-                            throw new Exception("Operator '" + Operator + "' not valid.");
-                    }
-                }
+					foreach (string PossibleOperator in GroupedOperator) {
+						int PossibleIndexOfOperator = Argument.LastIndexOf(PossibleOperator);
+						if (PossibleIndexOfOperator > IndexOfOperator) {
+							IndexOfOperator = PossibleIndexOfOperator;
+							Operator = PossibleOperator;
+						}
+					}
+
+					//int IndexOfOperator = Argument.IndexOf(Operator);
+
+					if (IndexOfOperator != -1) {
+						// Found an operator.
+						string BeforeOperator = Argument.Remove(IndexOfOperator);
+						string AfterOperator = Argument.Substring(IndexOfOperator + Operator.Length);
+						if (AfterOperator == "") throw new Exception("'" + Operator + "' operator expects two arguments.");
+						switch (Operator) {
+							case "+":
+								return Evaluate(BeforeOperator) + Evaluate(AfterOperator);
+							case "-":
+								return Evaluate(BeforeOperator) - Evaluate(AfterOperator);
+							case "*":
+								return Evaluate(BeforeOperator) * Evaluate(AfterOperator);
+							case "/":
+								return Evaluate(BeforeOperator) / Evaluate(AfterOperator);
+							case "|":
+								return IntEvaluate(BeforeOperator) | IntEvaluate(AfterOperator);
+							case "&":
+								return IntEvaluate(BeforeOperator) & IntEvaluate(AfterOperator);
+							case "^":
+								return IntEvaluate(BeforeOperator) ^ IntEvaluate(AfterOperator);
+							case ">>":
+								return IntEvaluate(BeforeOperator) >> IntEvaluate(AfterOperator);
+							case "<<":
+								return IntEvaluate(BeforeOperator) << IntEvaluate(AfterOperator);
+							case "%":
+								return Evaluate(BeforeOperator) % Evaluate(AfterOperator);
+							case "==":
+								return (Evaluate(BeforeOperator) == Evaluate(AfterOperator)) ? 1 : 0;
+							case "!=":
+								return (Evaluate(BeforeOperator) != Evaluate(AfterOperator)) ? 1 : 0;
+							case ">=":
+								return (Evaluate(BeforeOperator) >= Evaluate(AfterOperator)) ? 1 : 0;
+							case "<=":
+								return (Evaluate(BeforeOperator) <= Evaluate(AfterOperator)) ? 1 : 0;
+							case ">":
+								return (Evaluate(BeforeOperator) > Evaluate(AfterOperator)) ? 1 : 0;
+							case "<":
+								return (Evaluate(BeforeOperator) < Evaluate(AfterOperator)) ? 1 : 0;
+							case "&&":
+								return ((Evaluate(BeforeOperator) != 0) && (Evaluate(AfterOperator) != 0)) ? 1 : 0;
+							case "||":
+								return ((Evaluate(BeforeOperator) != 0) || (Evaluate(AfterOperator) != 0)) ? 1 : 0;
+							case "!":
+								return (Evaluate(BeforeOperator + (Evaluate(AfterOperator) != 0 ? 0 : 1))) != 0 ? 1 : 0;
+							case "~":
+								return Evaluate(BeforeOperator + ((int)~IntEvaluate(AfterOperator)).ToString());
+
+
+							default:
+								throw new Exception("Operator '" + Operator + "' not valid.");
+						}
+					}
+				
+				} while (IndexOfOperator > -1);
             }
 
 
