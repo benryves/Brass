@@ -102,7 +102,6 @@
   </ItemGroup>
   <ItemGroup>
     <Content Include="Resources\icon.ico" />
-    <Content Include="test.txt" />
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="Properties\Resources.resx">
@@ -145,6 +144,7 @@
   </Target>
   -->
   <PropertyGroup>
-    <PostBuildEvent>Copy "$(TargetPath)" "$(SolutionDir)..\..\Latenite\Latenite\bin\Compile\"</PostBuildEvent>
+    <PostBuildEvent>
+    </PostBuildEvent>
   </PropertyGroup>
 </Project>
