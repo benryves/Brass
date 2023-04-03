@@ -246,22 +246,6 @@ namespace Brass {
                     }
                 }
 
-				// Do we need to correct variable allocation?
-				StartTime = DateTime.Now;
-
-				/*foreach (var item in GetAllLabels()) {
-					
-				}*/
-				
-
-				ResetStateOnPass();
-				if (AssembleFile(Filename, Pass.Labels)) {
-					PassTime = DateTime.Now - StartTime;
-					Console.WriteLine("Pass 1 repeated to correct variables ({0}ms).", (int)PassTime.TotalMilliseconds);
-				} else {
-					return false;
-				}
-
                 StartTime = DateTime.Now;
 
                 AllListFiles = new Dictionary<uint, List<ListFileEntry>>(8);
