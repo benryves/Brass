@@ -33,7 +33,7 @@ namespace Brass {
 
             string Title = "Brass Z80 Assembler " +
                 VersionString +
-                " - Ben Ryves 2005-2023";
+                " - Ben Ryves 2005-2026";
             Console.WriteLine(Title);
             Console.WriteLine("".PadRight(Title.Length, '-'));
 
