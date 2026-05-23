@@ -533,18 +533,18 @@ namespace Brass {
                 for (uint i = 0; i < DecodeOutputBinary.Length; ++i) {
                     if (DecodeOutputBinary[i] != null && DecodeOutputBinary[i].WriteCount > 1) {
                         if (!CorruptedSection) {
-                            CorruptedSectionStart = i + BinaryStartLocation;
+                            CorruptedSectionStart = i;
                             CorruptedSection = true;
                         }
                     } else {
                         if (CorruptedSection) {
-                            DisplayError(ErrorType.Warning, "Data overlap between $" + CorruptedSectionStart.ToString("X4") + "-$" + ((int)i - 1 + BinaryStartLocation).ToString("X4") + ".");
+							DisplayError(ErrorType.Warning, string.Format("Data overlap " + ((CorruptedSectionStart == i - 1) ? "at " : "between ${0:X4}-") + "${1:X4}.", CorruptedSectionStart, ((int)i - 1)));
                         }
                         CorruptedSection = false;
                     }
                 }
                 if (CorruptedSection) {
-                    DisplayError(ErrorType.Warning, "Data overlap between $" + CorruptedSectionStart.ToString("X4") + "-$" + BinaryEndLocation.ToString("X4") + ".");
+					DisplayError(ErrorType.Warning, string.Format("Data overlap " + ((CorruptedSectionStart == BinaryEndLocation) ? "at " : "between ${0:X4}-") + "${1:X4}.", CorruptedSectionStart, BinaryEndLocation));
                 }
 
             } catch (Exception ex) {
