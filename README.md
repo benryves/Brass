@@ -1,7 +1,5 @@
 # ![](Manual/pig.png) Brass
 
-
-
 Brass is a Z80 assembler primarily designed for TI graphing calculators and 8-bit Sega consoles.
 
 At the time I developed it most people were using a shareware copy of Telemark Assembler (TASM) for TI calculator development.
@@ -27,3 +25,5 @@ I did eventually switch to developing [Brass 3](https://github.com/benryves/Bras
 much more feature-complete and robust. However, it's also rather overcomplicated and also has a pile of its own bugs,
 and if you're wondering what happened to Brass 2 in the middle then I think it's best to say that my ability to write
 a competent assembler is about as good as my ability to count.
+
+The manual can be read online: [Brass manual](https://benryves.github.io/Brass/Manual/).
