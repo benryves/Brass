@@ -761,17 +761,17 @@ namespace Brass {
 			StringBuilder result = new StringBuilder(stringToParse.Length);
 			foreach (var component in SafeSplit(stringToParse, '+')) {
 				var plainComponent = component.Trim();
-
-				if (plainComponent.Length < 2 || plainComponent.StartsWith("\"") != plainComponent.EndsWith("\"")) {
-					DisplayError(ErrorType.Error, "Malformed string expression '" + plainComponent + "'", CurrentFilename, CurrentLineNumber);
-				} else if (plainComponent.StartsWith("\"")) {
-					plainComponent = plainComponent.Substring(1, plainComponent.Length - 2);
-					if (supportsEscapeSequences) plainComponent = UnescapeString(plainComponent);
-					result.Append(plainComponent);
-				} else {
-					result.Append(Evaluate(plainComponent).ToString());
+				if (plainComponent.Length > 0) {
+					if (plainComponent.Length < 2 || plainComponent.StartsWith("\"") != plainComponent.EndsWith("\"")) {
+						DisplayError(ErrorType.Error, "Malformed string expression '" + plainComponent + "'", CurrentFilename, CurrentLineNumber);
+					} else if (plainComponent.StartsWith("\"")) {
+						plainComponent = plainComponent.Substring(1, plainComponent.Length - 2);
+						if (supportsEscapeSequences) plainComponent = UnescapeString(plainComponent);
+						result.Append(plainComponent);
+					} else {
+						result.Append(Evaluate(plainComponent).ToString());
+					}
 				}
-				
 			}
 			return result.ToString();
 		}
