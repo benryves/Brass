@@ -574,8 +574,8 @@ namespace Brass {
                                         #endregion
                                     case "#include":
                                     case ".include":
-                                        #region Include
-                                        string NewFileName = RestOfLine.Replace("\"", "");
+										#region Include
+										string NewFileName = ParseString(RestOfLine, false);
                                         OldFilenames.Push(CurrentFilename);
                                         OldLineNumbers.Push(CurrentLineNumber);
                                         if (!AssembleFile(ResolvePath(Filename, NewFileName), PassNumber)) {
@@ -632,7 +632,7 @@ namespace Brass {
 
                                                         }
 
-                                                        string FullFilename = Path.GetFullPath(ResolvePath(Filename, BinaryArguments[0].Replace("\"", "")).ToLower());
+														string FullFilename = Path.GetFullPath(ResolvePath(Filename, ParseString(BinaryArguments[0], false)).ToLower());
 
                                                         if (Rule != "") {
                                                             for (int j = 0; j < 256; ++j) {
@@ -1127,7 +1127,7 @@ namespace Brass {
                                     case ".variablename":
                                         #region Set variable name
                                         if (PassNumber == Pass.Labels) {
-                                            VariableName = RestOfLine.Trim().Trim('"');
+											VariableName = ParseString(RestOfLine, false);
                                         }
                                         break;
                                         #endregion
@@ -1895,7 +1895,7 @@ namespace Brass {
 
                                         try {
                                             if (IncBmpArgs.Length < 1 || IncBmpArgs.Length > 3) throw new Exception("Invalid number of arguments.");
-                                            string BmpFilename = ResolvePath(Filename, IncBmpArgs[0].Replace("\"", ""));
+                                            string BmpFilename = ResolvePath(Filename, ParseString(IncBmpArgs[0], false));
                                             if (!File.Exists(BmpFilename)) throw new Exception("Image file " + BmpFilename + " not found.");
                                             using (Bitmap B = new Bitmap(BmpFilename)) {
                                                 bool CanRle = false;
@@ -2055,7 +2055,7 @@ namespace Brass {
                                         #region Include labels file
                                         if (PassNumber == Pass.Labels) {
                                             try {
-                                                using (BinaryReader BR = new BinaryReader(new FileStream(ResolvePath(Filename, RestOfLine.Replace("\"", "")), FileMode.Open))) {
+                                                using (BinaryReader BR = new BinaryReader(new FileStream(ResolvePath(Filename, ParseString(RestOfLine, false)), FileMode.Open))) {
                                                     while (BR.BaseStream.Position < BR.BaseStream.Length) {
                                                         string LN = new string(BR.ReadChars(BR.ReadByte()));
                                                         uint LV = BR.ReadUInt16();

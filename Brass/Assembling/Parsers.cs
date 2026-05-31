@@ -751,6 +751,31 @@ namespace Brass {
             return Return.ToArray();
         }
 
+		/// <summary>
+		/// Parse a string argument, which just concatenates the parts of a string separated with +.
+		/// </summary>
+		/// <param name="stringToParse">The string to parse</param>
+		/// <param name="supportsEscapeSequences">Set to false to disable support for escape sequences in strings.</param>
+		/// <returns>The parsed string argument.</returns>
+		public static string ParseString(string stringToParse, bool supportsEscapeSequences = true) {
+			StringBuilder result = new StringBuilder(stringToParse.Length);
+			foreach (var component in SafeSplit(stringToParse, '+')) {
+				var plainComponent = component.Trim();
+
+				if (plainComponent.Length < 2 || plainComponent.StartsWith("\"") != plainComponent.EndsWith("\"")) {
+					DisplayError(ErrorType.Error, "Malformed string expression '" + plainComponent + "'", CurrentFilename, CurrentLineNumber);
+				} else if (plainComponent.StartsWith("\"")) {
+					plainComponent = plainComponent.Substring(1, plainComponent.Length - 2);
+					if (supportsEscapeSequences) plainComponent = UnescapeString(plainComponent);
+					result.Append(plainComponent);
+				} else {
+					result.Append(Evaluate(plainComponent).ToString());
+				}
+				
+			}
+			return result.ToString();
+		}
+
         /// <summary>
         /// Take a token and swap it for the enmacroed version.
         /// </summary>
