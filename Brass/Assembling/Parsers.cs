@@ -769,7 +769,11 @@ namespace Brass {
 						if (supportsEscapeSequences) plainComponent = UnescapeString(plainComponent);
 						result.Append(plainComponent);
 					} else {
-						result.Append(Evaluate(plainComponent).ToString());
+						try {
+							result.Append(Evaluate(plainComponent, true).ToString());
+						} catch {
+							result.Append(plainComponent);
+						}
 					}
 				}
 			}
